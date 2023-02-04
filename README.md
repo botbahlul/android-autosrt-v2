@@ -1,2 +1,10 @@
 # android-autosrt-v2
 ANDROID APP to AUTO GENERATE SRT subtitle file and TRANSLATED SRT subtitle file for any audio/video files
+
+https://user-images.githubusercontent.com/88623122/216783365-b9743b8c-0c52-4c84-b856-cb9f0ad1cbd2.mp4
+
+This app is a GUI VERSION of AUTOSRT PYHTON SCRIPT https://github.com/botbahlul/autosrt
+
+It's developed to running on ANDROID with the help of CHAQUOPY https://chaquo.com/chaquopy/
+
+Tested on Pixel 2 API 25 emulator, Nexus 5X API 29 emulator, and Xiaomi Redmi Note 7 Pro API 29

@@ -732,50 +732,10 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             activity.runOnUiThread(R())
 
         except KeyboardInterrupt:
-            '''
-            print("Cancelling transcription")
-            if os.path.isfile(cancel_file): os.remove(cancel_file)
-            if wav_filename:
-                if os.path.isfile(wav_filename): os.remove(wav_filename)
-            converter = None
-            recognizer = None
-            for extracted_region in extracted_regions:
-                if extracted_region:
-                    if os.path.isfile(extracted_region): os.remove(extracted_region)
-            extracted_regions = None
-            for transcription in transcriptions:
-                transcription = None
-            transcriptions = None
-            if srt_file:
-                if os.path.isfile(srt_file): os.remove(srt_file)
-            if translated_srt_file:
-                if os.path.isfile(translated_srt_file): os.remove(translated_srt_file)
-            if pbar: pbar = None
-            
-            if pool:
-                pool.terminate()
-                pool.close()
-                pool.join()
-                pool = None
-            time.sleep(1)
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    textview_debug.setText("autosrt : Process has been canceled")
-            activity.runOnUiThread(R())
-            os.kill(os.fork(), signal.SIGINT)
-            for thread in threading.enumerate(): 
-                thread.interrupt_main()
-            sys.exit(0)
-            return
-            '''
-
             canceled = True
             print("Cancelling transcription")
             if os.path.isfile(cancel_file): os.remove(cancel_file)
             print("Killing all threads")
-            #for t in threading.enumerate(): 
-                #t.interrupt_main(signum=signal.SIGINT)
-                #os.kill(t.native_id, signal.SIGINT)
             if wav_filename:
                 if os.path.isfile(wav_filename): os.remove(wav_filename)
             if extracted_regions:
@@ -792,11 +752,6 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                 if os.path.isdir(srt_folder_name): os.remove(srt_folder_name)
             pool.terminate()
             pool.close()
-            #time.sleep(1)
-            #class R(dynamic_proxy(Runnable)):
-                #def run(self):
-                    #textview_debug.setText("autosrt : Process has been canceled")
-            #activity.runOnUiThread(R())
             if forked_pid: os.kill(forked_pid, signal.SIGINT)
             if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
             os.kill(os.fork(), signal.SIGINT)
@@ -816,7 +771,6 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             textview_debug.append("Done!\n\n")
     activity.runOnUiThread(R())
 
-    #result = translated_srt_file
     return translated_srt_file
 
 
@@ -839,24 +793,6 @@ def pBar(count_value, total, prefix, activity, textview_debug):
         text = str('%s [%s] %s%s\r' %(prefix, bar, int(percentage), '%'))
         setText(text, activity, textview_debug)
 
-
-'''
-def check_cancel_file(activity, textview_debug):
-    global pool, wav_filename, srt_file, translated_srt_file, converter, recognizer, extracted_regions, transcriptions
-
-    if os.path.isfile(cancel_file):
-        canceled = True
-        os.remove(cancel_file)
-        for thread in threading.enumerate(): 
-            thread.interrupt_main()
-            os.kill(thread.native_id, signal.SIGINT)
-        pool.terminate()
-        pool.close()
-        pool.join()
-        os.kill(os.fork(), signal.SIGINT)
-        sys.exit(1)
-        return
-'''
 
 def check_cancel_file(activity, textview_debug):
     global transcribe_pid, forked_pid, pool, wav_filename, srt_file, translated_srt_file, srt_folder_name, converter, recognizer, extracted_regions, transcriptions

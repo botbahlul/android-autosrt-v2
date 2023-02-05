@@ -700,6 +700,24 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                 total_entries = CountEntries(srt_file)
                 print('Total Entries = {}'.format(total_entries))
 
+                e=0
+                with open(translated_srt_file, 'w', encoding='utf-8') as f:
+                    time.sleep(1)
+                    for number_in_sequence, timecode, subtitles, count_failure, count_entries in translate(entries, src=src, dest=dest, patience="", verbose=""):
+                        check_cancel_file(activity, textview_debug)
+                        f.write(number_in_sequence)
+                        f.write(timecode)
+                        for subtitle in subtitles:
+                            f.write(subtitle)
+                            f.write('\n')
+                            e += 1
+                            pBar(e, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+                            #pbar.update(e)
+                    #pbar.finish()
+                    pBar(total_entries, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+                    time.sleep(1)
+
+                '''
                 subtitle_translator = SubtitleTranslator(src=src, dest=dest)
                 translated_entries = []
                 time.sleep(2)
@@ -716,6 +734,7 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                         for translated_subtitle in translated_subtitles:
                             f.write(translated_subtitle)
                             f.write('\n')
+                '''
 
             print('Done.')
             print("SRT subtitles file created at      : {}".format(srt_file))

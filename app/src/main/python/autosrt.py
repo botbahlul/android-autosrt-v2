@@ -704,7 +704,6 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                 with open(translated_srt_file, 'w', encoding='utf-8') as f:
                     time.sleep(1)
                     for number_in_sequence, timecode, subtitles, count_failure, count_entries in translate(entries, src=src, dest=dest, patience="", verbose=""):
-                        check_cancel_file(activity, textview_debug)
                         f.write(number_in_sequence)
                         f.write(timecode)
                         for subtitle in subtitles:

@@ -38,8 +38,8 @@ transcriptions_file = join(cache_dir, "transcriptions.txt")
 region_start_file = join(cache_dir, 'region_starts.txt')
 elapsed_time_file = join(cache_dir, 'elapsed_time.txt')
 wav_filename = None
-srt_file = None
-translated_srt_file = None
+subtitle_file = None
+translated_subtitle_file = None
 pBar_time_start = None
 canceled = False
 wav_filename = None
@@ -47,8 +47,8 @@ converter = None
 recognizer = None
 extracted_regions = None
 transcription = None
-srt_file = None
-translated_srt_file = None
+subtitle_file = None
+translated_subtitle_file = None
 srt_folder_name = None
 pool = None
 transcribe_pid = None
@@ -434,7 +434,7 @@ def extract_audio(filename, channels=1, rate=16000):
 
 #def find_speech_regions(filename, frame_width=4096, min_region_size=0.5, max_region_size=6):
 def find_speech_regions(filename, frame_width=4096, min_region_size=0.3, max_region_size=8):
-    global pool, wav_filename, srt_file, translated_srt_file, converter, recognizer, extracted_regions, transcriptions
+    global pool, wav_filename, subtitle_file, translated_subtitle_file, converter, recognizer, extracted_regions, transcriptions
 
     reader = wave.open(filename)
     sample_width = reader.getsampwidth()
@@ -476,9 +476,9 @@ def find_speech_regions(filename, frame_width=4096, min_region_size=0.3, max_reg
     return regions
 
 
-def CountEntries(srt_file):
+def CountEntries(subtitle_file):
     e=0
-    with open(srt_file, 'r', encoding='utf-8') as srt:
+    with open(subtitle_file, 'r', encoding='utf-8') as srt:
         while True:
             e += 1
             # read lines in order
@@ -500,16 +500,16 @@ def CountEntries(srt_file):
     return total_entries
 
 
-def entries_generator(srt_file):
+def entries_generator(subtitle_file):
     """Generate a entries queue.
 
     input:
-        srt_file: The original filename. [*.srt]
+        subtitle_file: The original filename. [*.srt]
 
     output:
         entries: A queue generator.
     """
-    with open(srt_file, 'r', encoding='utf-8') as srt:
+    with open(subtitle_file, 'r', encoding='utf-8') as srt:
         while True:
             # read lines in order
             number_in_sequence = srt.readline()
@@ -611,36 +611,37 @@ class SubtitleTranslator(object):
                     fail_to_translate = False
                     if verbose:
                         print('Translate successfully. The result: {}'.format(translated_subtitle))
-
             translated_subtitles.append(translated_subtitle + '\n')
-
         return number_in_sequence, timecode, translated_subtitles
 
-'''
-# THIS IS SIMPLY WORKING BUT STILL GOT HTTP 503 ERROR
-class SubtitleTranslator(object):
-    def __init__(self, src, dest):
+class TranscriptTranslator(object):
+    def __init__(self, src, dest, patience=-1):
         self.src = src
         self.dest = dest
+        self.patience = patience
 
-    def __call__(self, entries):
+    def __call__(self, sentence):
         translator = Translator()
-        translated_subtitles = []
-        number_in_sequence, timecode, subtitles = entries
+        translated_sentence = []
 
-        for i, subtitle in enumerate(subtitles, 1):
-            # handle the special case: empty string.
-            if not subtitle:
-                translated_subtitles.append(subtitle)
-            translated_subtitle = translator.translate(subtitle, src=self.src, dest=self.dest).text
-            translated_subtitle = translator.translate(translated_subtitle, src=self.src, dest=self.dest).text
-            translated_subtitles.append(translated_subtitle + '\n')
-        return number_in_sequence, timecode, translated_subtitles
-'''
+        # handle the special case: empty string.
+        if not sentence:
+            return None
+        translated_sentence = translator.translate(sentence, src=self.src, dest=self.dest).text
+        fail_to_translate = translated_sentence[-1] == '\n'
+        while fail_to_translate and patience:
+            translated_sentence = translator.translate(translated_sentence, src=self.src, dest=self.dest).text
+            if translated_sentence[-1] == '\n':
+                if patience == -1:
+                    continue
+                patience -= 1
+            else:
+                fail_to_translate = False
+        return translated_sentence
 
 
 def transcribe(src, dest, filename, file_display_name, activity, textview_debug):
-    global transcribe_pid, forked_pid, pool, wav_filename, srt_file, translated_srt_file, srt_folder_name, converter, recognizer, extracted_regions, transcriptions
+    global transcribe_pid, forked_pid, pool, wav_filename, subtitle_file, translated_subtitle_file, srt_folder_name, converter, recognizer, extracted_regions, transcriptions
 
     watchdog = threading.Thread(target=check_cancel_file, args=(activity, textview_debug))
     watchdog.daemon = True
@@ -651,8 +652,8 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
     forked_pid = os.fork()
 
     wav_filename = None
-    srt_file = None
-    translated_srt_file = None
+    subtitle_file = None
+    translated_subtitle_file = None
 
     print("Converting to a temporary WAV file")
     class R(dynamic_proxy(Runnable)):
@@ -703,7 +704,6 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             time.sleep(1)
             pBar(len(regions), len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
         
-
             print("Creating transcriptions")
             time.sleep(2)
             for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
@@ -717,32 +717,34 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             formatted_subtitles = formatter(timed_subtitles)
 
             #base, ext = os.path.splitext(filename)
-            #srt_file = "{base}.{format}".format(base=base, format="srt")
+            #subtitle_file = "{base}.{format}".format(base=base, format="srt")
 
             files_dir = str(context.getExternalFilesDir(None))
             srt_folder_name = join(files_dir, file_display_name[:-4])
             if not os.path.isdir(srt_folder_name):
                 os.mkdir(srt_folder_name)
-            srt_file = join(srt_folder_name, file_display_name[:-4] + ".srt")
+            subtitle_file = join(srt_folder_name, file_display_name[:-4] + ".srt")
 
-            with open(srt_file, 'wb') as f:
+            with open(subtitle_file, 'wb') as f:
                 f.write(formatted_subtitles.encode("utf-8"))
                 f.close()
 
-            with open(srt_file, 'a') as f:
+            with open(subtitle_file, 'a') as f:
                 f.write("\n")
                 f.close()
 
-            if (not is_same_language(src, dest)) and (os.path.isfile(srt_file)) and (not os.path.isfile(cancel_file)):
+            if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
                 print("Translating transcriptions")
-                entries = entries_generator(srt_file)
-                translated_srt_file = srt_file[ :-4] + '_translated.srt'
-                total_entries = CountEntries(srt_file)
-                print('Total Entries = {}'.format(total_entries))
+                #entries = entries_generator(subtitle_file)
+                translated_subtitle_file = subtitle_file[ :-4] + '_translated.srt'
+                #total_entries = CountEntries(subtitle_file)
+                #print('Total Entries = {}'.format(total_entries))
 
                 '''
+                # SEQUENTIAL TRANSLATION USING 'def translate()'
+                # TO SLOW (WORD BY WORD TRANSLATION)
                 e=0
-                with open(translated_srt_file, 'w', encoding='utf-8') as f:
+                with open(translated_subtitle_file, 'w', encoding='utf-8') as f:
                     time.sleep(1)
                     for number_in_sequence, timecode, subtitles, count_failure, count_entries in translate(entries, src=src, dest=dest, patience="", verbose=""):
                         f.write(number_in_sequence)
@@ -758,6 +760,9 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                     time.sleep(1)
                 '''
 
+                '''
+                # CONCURRENT TRANSLATIONS USING 'class SubtitleTranslator()'
+                # STILL TO SLOW (WORD BY WORD TRANSLATION)
                 subtitle_translator = SubtitleTranslator(src=src, dest=dest)
                 translated_entries = []
                 time.sleep(2)
@@ -767,27 +772,47 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                 time.sleep(1)
                 pBar(total_entries, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
 
-                with open(translated_srt_file, 'w', encoding='utf-8') as f:
+                with open(translated_subtitle_file, 'w', encoding='utf-8') as f:
                     for number_in_sequence, timecode, translated_subtitles in translated_entries:
                         f.write(number_in_sequence)
                         f.write(timecode)
                         for translated_subtitle in translated_subtitles:
                             f.write(translated_subtitle)
                             f.write('\n')
+                '''
 
+                # CONCURRENT TRANSLATIONS USING 'class TransctiptionTranslator()'
+                # BETTER PERFORMANCE (SENTENCE BY SENTENCE TRANSLATION)
+                transcript_translator = TranscriptTranslator(src=src, dest=dest)
+                translated_transcriptions = []
+                time.sleep(2)
+                for i, translated_transcription in enumerate(pool.imap(transcript_translator, transcriptions)):
+                    translated_transcriptions.append(translated_transcription)
+                    pBar(i, len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+                time.sleep(1)
+                pBar(len(transcriptions), len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+
+                timed_translated_subtitles = [(r, t) for r, t in zip(regions, translated_transcriptions) if t]
+                formatter = FORMATTERS.get("srt")
+                formatted_translated_subtitles = formatter(timed_translated_subtitles)
+
+                with open(translated_subtitle_file, 'wb') as f:
+                    f.write(formatted_translated_subtitles.encode("utf-8"))
+                with open(translated_subtitle_file, 'a') as f:
+                    f.write("\n")
 
             print('Done.')
-            print("SRT subtitles file created at      : {}".format(srt_file))
-            if (not is_same_language(src, dest)) and (os.path.isfile(srt_file)) and (not os.path.isfile(cancel_file)):
-                print('Translated SRT subtitles file created at    : {}' .format(translated_srt_file))
+            print("Subtitles file created at      : {}".format(subtitle_file))
+            if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
+                print('Translated subtitles file created at    : {}' .format(translated_subtitle_file))
             class R(dynamic_proxy(Runnable)):
                 def run(self):
                     time.sleep(1)
-                    textview_debug.append("\n\nSRT subtitles file created at :\n")
-                    textview_debug.append(srt_file + "\n\n")
-                    if (not is_same_language(src, dest)) and (os.path.isfile(srt_file)) and (not os.path.isfile(cancel_file)):
-                        textview_debug.append("Translated SRT subtitles file created at:\n")
-                        textview_debug.append(translated_srt_file + "\n\n")
+                    textview_debug.append("\n\nSubtitles file created at :\n")
+                    textview_debug.append(subtitle_file + "\n\n")
+                    if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
+                        textview_debug.append("Translated subtitles file created at:\n")
+                        textview_debug.append(translated_subtitle_file + "\n\n")
             activity.runOnUiThread(R())
 
         except KeyboardInterrupt:
@@ -803,19 +828,24 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             converter = None
             recognizer = None
             transcriptions = None
-            if srt_file:
-                if os.path.isfile(srt_file): os.remove(srt_file)
-            if translated_srt_file:
-                if os.path.isfile(translated_srt_file): os.remove(translated_srt_file)
+            if subtitle_file:
+                if os.path.isfile(subtitle_file): os.remove(subtitle_file)
+            if translated_subtitle_file:
+                if os.path.isfile(translated_subtitle_file): os.remove(translated_subtitle_file)
             if srt_folder_name:
                 if os.path.isdir(srt_folder_name): os.remove(srt_folder_name)
             pool.terminate()
             pool.close()
-            if forked_pid: os.kill(forked_pid, signal.SIGINT)
-            if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
-            os.kill(os.fork(), signal.SIGINT)
-            os.kill(os.getpid(), signal.SIGINT)
-            signal.signal(signal.SIGINT, signal_handle)
+            #if forked_pid: os.kill(forked_pid, signal.SIGINT)
+            if forked_pid: os.kill(forked_pid, signal.SIGBREAK)
+            #if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
+            if transcribe_pid: os.kill(transcribe_pid, signal.SIGBREAK)
+            #os.kill(os.fork(), signal.SIGINT)
+            os.kill(os.fork(), signal.SIGBREAK)
+            #os.kill(os.getpid(), signal.SIGINT)
+            os.kill(os.getpid(), signal.SIGBREAK)
+            #signal.signal(signal.SIGINT, signal_handle)
+            signal.signal(signal.SIGBREAK, signal_handle)
             sys.exit(0)
             return
 
@@ -830,7 +860,7 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
             textview_debug.append("Done!\n\n")
     activity.runOnUiThread(R())
 
-    return translated_srt_file
+    return translated_subtitle_file
 
 
 def setText(text, activity, textview_debug):
@@ -854,7 +884,7 @@ def pBar(count_value, total, prefix, activity, textview_debug):
 
 
 def check_cancel_file(activity, textview_debug):
-    global transcribe_pid, forked_pid, pool, wav_filename, srt_file, translated_srt_file, srt_folder_name, converter, recognizer, extracted_regions, transcriptions
+    global transcribe_pid, forked_pid, pool, wav_filename, subtitle_file, translated_subtitle_file, srt_folder_name, converter, recognizer, extracted_regions, transcriptions
 
     while True:
         if os.path.isfile(cancel_file):
@@ -872,10 +902,10 @@ def check_cancel_file(activity, textview_debug):
             converter = None
             recognizer = None
             transcriptions = None
-            if srt_file:
-                if os.path.isfile(srt_file): os.remove(srt_file)
-            if translated_srt_file:
-                if os.path.isfile(translated_srt_file): os.remove(translated_srt_file)
+            if subtitle_file:
+                if os.path.isfile(subtitle_file): os.remove(subtitle_file)
+            if translated_subtitle_file:
+                if os.path.isfile(translated_subtitle_file): os.remove(translated_subtitle_file)
             if srt_folder_name:
                 if os.path.isdir(srt_folder_name): os.remove(srt_folder_name)
             if forked_pid: os.kill(forked_pid, signal.SIGINT)
@@ -930,7 +960,7 @@ class RepeatedTimer(object):
 
 
 def main(src, dest, filename, activity, textview_debug):
-    global pool, wav_filename, srt_file, translated_srt_file, converter, recognizer, extracted_regions, transcription
+    global pool, wav_filename, subtitle_file, translated_subtitle_file, converter, recognizer, extracted_regions, transcription
 
     return transcribe(src, dest, filename, activity, textview_debug)
 

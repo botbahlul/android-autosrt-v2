@@ -56,9 +56,11 @@ public class MainActivity extends AppCompatActivity {
     Spinner spinner_src_languages;
     Spinner spinner_dst_languages;
     @SuppressLint("StaticFieldLeak")
-    public static TextView textview_fileuri;
+    public static TextView textview_fileURI;
     @SuppressLint("StaticFieldLeak")
-    public static TextView textview_filepath;
+    public static TextView textview_filePath;
+    @SuppressLint("StaticFieldLeak")
+    public static TextView textview_fileDisplayName;
     @SuppressLint("StaticFieldLeak")
     public static Button button_browse, button_start;
     @SuppressLint("StaticFieldLeak")
@@ -214,20 +216,20 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Bambara");
         arraylist_src_languages.add("Basque");
         arraylist_src_languages.add("Belarusian");
-        arraylist_src_languages.add("Bengali (Bangla)");
+        arraylist_src_languages.add("Bengali");
         arraylist_src_languages.add("Bhojpuri");
         arraylist_src_languages.add("Bosnian");
         arraylist_src_languages.add("Bulgarian");
         arraylist_src_languages.add("Catalan");
         arraylist_src_languages.add("Cebuano");
-        arraylist_src_languages.add("Chichewa, Chewa, Nyanja");
+        arraylist_src_languages.add("Chichewa");
         arraylist_src_languages.add("Chinese (Simplified)");
         arraylist_src_languages.add("Chinese (Traditional)");
         arraylist_src_languages.add("Corsican");
         arraylist_src_languages.add("Croatian");
         arraylist_src_languages.add("Czech");
         arraylist_src_languages.add("Danish");
-        arraylist_src_languages.add("Divehi, Dhivehi, Maldivian");
+        arraylist_src_languages.add("Dhivehi");
         arraylist_src_languages.add("Dogri");
         arraylist_src_languages.add("Dutch");
         arraylist_src_languages.add("English");
@@ -262,7 +264,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Kannada");
         arraylist_src_languages.add("Kazakh");
         arraylist_src_languages.add("Khmer");
-        arraylist_src_languages.add("Kinyarwanda (Rwanda)");
+        arraylist_src_languages.add("Kinyarwanda");
         arraylist_src_languages.add("Konkani");
         arraylist_src_languages.add("Korean");
         arraylist_src_languages.add("Krio");
@@ -271,10 +273,10 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Kyrgyz");
         arraylist_src_languages.add("Lao");
         arraylist_src_languages.add("Latin");
-        arraylist_src_languages.add("Latvian (Lettish)");
+        arraylist_src_languages.add("Latvian");
         arraylist_src_languages.add("Lingala");
         arraylist_src_languages.add("Lithuanian");
-        arraylist_src_languages.add("Luganda, Ganda");
+        arraylist_src_languages.add("Luganda");
         arraylist_src_languages.add("Luxembourgish");
         arraylist_src_languages.add("Macedonian");
         arraylist_src_languages.add("Malagasy");
@@ -290,14 +292,14 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Nepali");
         arraylist_src_languages.add("Norwegian");
         arraylist_src_languages.add("Oriya");
-        arraylist_src_languages.add("Oromo (Afaan Oromo)");
-        arraylist_src_languages.add("Pashto, Pushto");
-        arraylist_src_languages.add("Persian (Farsi)");
+        arraylist_src_languages.add("Oromo");
+        arraylist_src_languages.add("Pashto");
+        arraylist_src_languages.add("Persian");
         arraylist_src_languages.add("Polish");
         arraylist_src_languages.add("Portuguese");
-        arraylist_src_languages.add("Punjabi (Eastern)");
+        arraylist_src_languages.add("Punjabi");
         arraylist_src_languages.add("Quechua");
-        arraylist_src_languages.add("Romanian, Moldavian, Moldovan");
+        arraylist_src_languages.add("Romanian");
         arraylist_src_languages.add("Russian");
         arraylist_src_languages.add("Samoan");
         arraylist_src_languages.add("Sanskrit");
@@ -313,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Somali");
         arraylist_src_languages.add("Spanish");
         arraylist_src_languages.add("Sundanese");
-        arraylist_src_languages.add("Swahili (Kiswahili)");
+        arraylist_src_languages.add("Swahili");
         arraylist_src_languages.add("Swedish");
         arraylist_src_languages.add("Tajik");
         arraylist_src_languages.add("Tamil");
@@ -484,20 +486,20 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Bambara");
         arraylist_dst_languages.add("Basque");
         arraylist_dst_languages.add("Belarusian");
-        arraylist_dst_languages.add("Bengali (Bangla)");
+        arraylist_dst_languages.add("Bengali");
         arraylist_dst_languages.add("Bhojpuri");
         arraylist_dst_languages.add("Bosnian");
         arraylist_dst_languages.add("Bulgarian");
         arraylist_dst_languages.add("Catalan");
         arraylist_dst_languages.add("Cebuano");
-        arraylist_dst_languages.add("Chichewa, Chewa, Nyanja");
+        arraylist_dst_languages.add("Chichewa");
         arraylist_dst_languages.add("Chinese (Simplified)");
         arraylist_dst_languages.add("Chinese (Traditional)");
         arraylist_dst_languages.add("Corsican");
         arraylist_dst_languages.add("Croatian");
         arraylist_dst_languages.add("Czech");
         arraylist_dst_languages.add("Danish");
-        arraylist_dst_languages.add("Divehi, Dhivehi, Maldivian");
+        arraylist_dst_languages.add("Dhivehi");
         arraylist_dst_languages.add("Dogri");
         arraylist_dst_languages.add("Dutch");
         arraylist_dst_languages.add("English");
@@ -532,7 +534,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Kannada");
         arraylist_dst_languages.add("Kazakh");
         arraylist_dst_languages.add("Khmer");
-        arraylist_dst_languages.add("Kinyarwanda (Rwanda)");
+        arraylist_dst_languages.add("Kinyarwanda");
         arraylist_dst_languages.add("Konkani");
         arraylist_dst_languages.add("Korean");
         arraylist_dst_languages.add("Krio");
@@ -541,10 +543,10 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Kyrgyz");
         arraylist_dst_languages.add("Lao");
         arraylist_dst_languages.add("Latin");
-        arraylist_dst_languages.add("Latvian (Lettish)");
+        arraylist_dst_languages.add("Latvian");
         arraylist_dst_languages.add("Lingala");
         arraylist_dst_languages.add("Lithuanian");
-        arraylist_dst_languages.add("Luganda, Ganda");
+        arraylist_dst_languages.add("Luganda");
         arraylist_dst_languages.add("Luxembourgish");
         arraylist_dst_languages.add("Macedonian");
         arraylist_dst_languages.add("Malagasy");
@@ -560,14 +562,14 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Nepali");
         arraylist_dst_languages.add("Norwegian");
         arraylist_dst_languages.add("Oriya");
-        arraylist_dst_languages.add("Oromo (Afaan Oromo)");
-        arraylist_dst_languages.add("Pashto, Pushto");
-        arraylist_dst_languages.add("Persian (Farsi)");
+        arraylist_dst_languages.add("Oromo");
+        arraylist_dst_languages.add("Pashto");
+        arraylist_dst_languages.add("Persian");
         arraylist_dst_languages.add("Polish");
         arraylist_dst_languages.add("Portuguese");
-        arraylist_dst_languages.add("Punjabi (Eastern)");
+        arraylist_dst_languages.add("Punjabi");
         arraylist_dst_languages.add("Quechua");
-        arraylist_dst_languages.add("Romanian, Moldavian, Moldovan");
+        arraylist_dst_languages.add("Romanian");
         arraylist_dst_languages.add("Russian");
         arraylist_dst_languages.add("Samoan");
         arraylist_dst_languages.add("Sanskrit");
@@ -583,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Somali");
         arraylist_dst_languages.add("Spanish");
         arraylist_dst_languages.add("Sundanese");
-        arraylist_dst_languages.add("Swahili (Kiswahili)");
+        arraylist_dst_languages.add("Swahili");
         arraylist_dst_languages.add("Swedish");
         arraylist_dst_languages.add("Tajik");
         arraylist_dst_languages.add("Tamil");
@@ -615,15 +617,16 @@ public class MainActivity extends AppCompatActivity {
         setup_src_spinner(arraylist_src_languages);
         spinner_dst_languages = findViewById(R.id.spinner_dst_languages);
         setup_dst_spinner(arraylist_dst_languages);
-        textview_fileuri = findViewById(R.id.textview_fileuri);
-        textview_filepath = findViewById(R.id.textview_filepath);
+        textview_fileURI = findViewById(R.id.textview_fileURI);
+        textview_filePath = findViewById(R.id.textview_filePath);
+        textview_fileDisplayName = findViewById(R.id.textview_fileDisplayName);
         button_browse = findViewById(R.id.button_browse);
         button_start = findViewById(R.id.button_start);
         textview_output = findViewById(R.id.textview_output);
         spinner_src_languages.setFocusable(true);
         spinner_src_languages.requestFocus();
 
-        textview_fileuri.setMovementMethod(new ScrollingMovementMethod());
+        textview_fileURI.setMovementMethod(new ScrollingMovementMethod());
         textview_output.setMovementMethod(new ScrollingMovementMethod());
 
         if (getSupportActionBar() != null) {
@@ -762,17 +765,18 @@ public class MainActivity extends AppCompatActivity {
                         if (intent != null) {
                             FILE.URI = intent.getData();
                         }
-                        textview_fileuri.setText(FILE.URI.toString());
-                        FILE.DISPLAY_NAME = queryName(getApplicationContext(), FILE.URI);
                         FILE.PATH = Uri2Path(getApplicationContext(), FILE.URI);
+                        FILE.DISPLAY_NAME = queryName(getApplicationContext(), FILE.URI);
                         FILE.SRT_FINAL_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + ".srt";
                         FILE.SRT_TRANSLATED_FINAL_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "_translated.srt";
-                        textview_filepath.setText(FILE.PATH + "\n\n");
-                        String m =  "uriDisplayName = " + FILE.DISPLAY_NAME;
-                        textview_output.append(m + "\n\n");
-                        textview_output.append("filePath = " + FILE.PATH + "\n\n");
-                        //textview_output.append("FILE.SRT_FINAL_PATH = " + FILE.SRT_FINAL_PATH + "\n\n");
-                        //textview_output.append("FILE.SRT_TRANSLATED_FINAL_PATH = " + FILE.SRT_TRANSLATED_FINAL_PATH + "\n\n");
+                        runOnUiThread(() -> {
+                            String t1 = "FILE.URI = " + FILE.URI;
+                            textview_fileURI.setText(t1);
+                            String t2 = "FILE.PATH = " + FILE.PATH;
+                            textview_filePath.setText(t2);
+                            String t3 = "FILE.DISPLAY_NAME = " + FILE.DISPLAY_NAME;
+                            textview_fileDisplayName.setText(t3);
+                        });
                     }
                 }
             });

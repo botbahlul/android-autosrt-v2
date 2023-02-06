@@ -12,9 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 //import android.os.FileUtils;
-import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.provider.OpenableColumns;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -158,7 +156,7 @@ public class TranscribeActivity extends AppCompatActivity {
             Log.d("Current Thread", "Running");
             if (!CANCEL_STATUS.IS_CANCELING) {
                 try {
-                    // ALTERNATIVE 1 : CREATE A COPY OF ORIGINAL MEDIA FILE
+                    // ALTERNATIVE 1 : CREATE A COPY OF PICKED FILE
                     /*String srtFolder = substring(FILE.DISPLAY_NAME,0,FILE.DISPLAY_NAME.length()-4);
                     String prefix = "Creating a copy of " + FILE.DISPLAY_NAME + " : ";
                     workPath = copyFileToExternalFilesDir(FILE.URI, srtFolder, prefix);
@@ -176,7 +174,7 @@ public class TranscribeActivity extends AppCompatActivity {
                         py = Python.getInstance();
                     }
 
-                    // ALTERNATIVE 2 : DIRECTLY USE ORIGINAL MEDIA FILE
+                    // ALTERNATIVE 2 : DIRECTLY USE PICKED FILE
                     if (FILE.PATH != null) {
                         if (!CANCEL_STATUS.IS_CANCELING) {
                             pyObjectSRTFileTranslated = py.getModule("autosrt").callAttr("transcribe", LANGUAGE.SRC, LANGUAGE.DST, FILE.PATH, FILE.DISPLAY_NAME, TranscribeActivity.this, textview_debug);
@@ -201,8 +199,8 @@ public class TranscribeActivity extends AppCompatActivity {
                                     }
                                     String t = "Done";
                                     button_cancel.setText(t);
+                                    MainActivity.textview_output.setText("");
                                 });
-                                MainActivity.textview_output.setText("");
                             }
 
                             else if (CANCEL_STATUS.IS_CANCELING && FILE.URI != null) {

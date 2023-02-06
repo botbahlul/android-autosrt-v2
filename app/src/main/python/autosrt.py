@@ -556,7 +556,6 @@ def translate(entries, src, dest, patience, verbose):
                 if verbose:
                     print('[Failure] Retry to translate...')
                     print('The translated subtitle: {}', end=''.format(translated_subtitle))
-
                 translated_subtitle = translator.translate(translated_subtitle, src=src, dest=dest).text
                 if translated_subtitle[-1] == '\n':
                     if patience == -1:
@@ -577,7 +576,6 @@ def translate(entries, src, dest, patience, verbose):
             print('[{}] Failure to translate current entry...'.format(count_entries))
 
         yield number_in_sequence, timecode, translated_subtitles, count_failure, count_entries
-
 
 class SubtitleTranslator(object):
     def __init__(self, src, dest, patience=-1, verbose=''):
@@ -613,8 +611,32 @@ class SubtitleTranslator(object):
                     fail_to_translate = False
                     if verbose:
                         print('Translate successfully. The result: {}'.format(translated_subtitle))
+
+            translated_subtitles.append(translated_subtitle + '\n')
+
+        return number_in_sequence, timecode, translated_subtitles
+
+'''
+# THIS IS SIMPLY WORKING BUT STILL GOT HTTP 503 ERROR
+class SubtitleTranslator(object):
+    def __init__(self, src, dest):
+        self.src = src
+        self.dest = dest
+
+    def __call__(self, entries):
+        translator = Translator()
+        translated_subtitles = []
+        number_in_sequence, timecode, subtitles = entries
+
+        for i, subtitle in enumerate(subtitles, 1):
+            # handle the special case: empty string.
+            if not subtitle:
+                translated_subtitles.append(subtitle)
+            translated_subtitle = translator.translate(subtitle, src=self.src, dest=self.dest).text
+            translated_subtitle = translator.translate(translated_subtitle, src=self.src, dest=self.dest).text
             translated_subtitles.append(translated_subtitle + '\n')
         return number_in_sequence, timecode, translated_subtitles
+'''
 
 
 def transcribe(src, dest, filename, file_display_name, activity, textview_debug):

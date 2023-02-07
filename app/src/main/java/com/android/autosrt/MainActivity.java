@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src.add("mni");
         arraylist_src.add("lus");
         arraylist_src.add("mn");
-        arraylist_src.add("mmr");
+        arraylist_src.add("my");
         arraylist_src.add("ne");
         arraylist_src.add("no");
         arraylist_src.add("or");
@@ -425,7 +425,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst.add("mni");
         arraylist_dst.add("lus");
         arraylist_dst.add("mn");
-        arraylist_dst.add("mmr");
+        arraylist_dst.add("my");
         arraylist_dst.add("ne");
         arraylist_dst.add("no");
         arraylist_dst.add("or");

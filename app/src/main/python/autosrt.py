@@ -80,12 +80,12 @@ arraylist_language_code.append("ny")
 arraylist_language_code.append("zh-CN")
 arraylist_language_code.append("zh-TW")
 arraylist_language_code.append("co")
-arraylist_language_code.append("cr")
+arraylist_language_code.append("hr")
 arraylist_language_code.append("cs")
 arraylist_language_code.append("da")
 arraylist_language_code.append("dv")
-arraylist_language_code.append("nl")
 arraylist_language_code.append("doi")
+arraylist_language_code.append("nl")
 arraylist_language_code.append("en")
 arraylist_language_code.append("eo")
 arraylist_language_code.append("et")
@@ -119,7 +119,7 @@ arraylist_language_code.append("kn")
 arraylist_language_code.append("kk")
 arraylist_language_code.append("km")
 arraylist_language_code.append("rw")
-arraylist_language_code.append("kok")
+arraylist_language_code.append("gom")
 arraylist_language_code.append("ko")
 arraylist_language_code.append("kri")
 arraylist_language_code.append("kmr")
@@ -139,7 +139,7 @@ arraylist_language_code.append("ml")
 arraylist_language_code.append("mt")
 arraylist_language_code.append("mi")
 arraylist_language_code.append("mr")
-arraylist_language_code.append("mni")
+arraylist_language_code.append("mni-Mtei")
 arraylist_language_code.append("lus")
 arraylist_language_code.append("mn")
 arraylist_language_code.append("my")
@@ -181,9 +181,9 @@ arraylist_language_code.append("ts")
 arraylist_language_code.append("tr")
 arraylist_language_code.append("tk")
 arraylist_language_code.append("tw")
-arraylist_language_code.append("ug")
 arraylist_language_code.append("uk")
 arraylist_language_code.append("ur")
+arraylist_language_code.append("ug")
 arraylist_language_code.append("uz")
 arraylist_language_code.append("vi")
 arraylist_language_code.append("cy")
@@ -193,138 +193,139 @@ arraylist_language_code.append("yo")
 arraylist_language_code.append("zu")
 
 arraylist_language = []
-arraylist_language.append("Afrikaans")
-arraylist_language.append("Albanian")
-arraylist_language.append("Amharic")
-arraylist_language.append("Arabic")
-arraylist_language.append("Armenian")
-arraylist_language.append("Assamese")
-arraylist_language.append("Aymara")
-arraylist_language.append("Azerbaijani")
-arraylist_language.append("Bambara")
-arraylist_language.append("Basque")
-arraylist_language.append("Belarusian")
-arraylist_language.append("Bengali (Bangla)")
-arraylist_language.append("Bhojpuri")
-arraylist_language.append("Bosnian")
-arraylist_language.append("Bulgarian")
-arraylist_language.append("Catalan")
-arraylist_language.append("Cebuano")
-arraylist_language.append("Chichewa, Nyanja")
-arraylist_language.append("Chinese (Simplified)")
-arraylist_language.append("Chinese (Traditional)")
-arraylist_language.append("Corsican")
-arraylist_language.append("Croatian")
-arraylist_language.append("Czech")
-arraylist_language.append("Danish")
-arraylist_language.append("Divehi, Maldivian")
-arraylist_language.append("Dogri")
-arraylist_language.append("Dutch")
-arraylist_language.append("English")
-arraylist_language.append("Esperanto")
-arraylist_language.append("Estonian")
-arraylist_language.append("Ewe")
-arraylist_language.append("Filipino")
-arraylist_language.append("Finnish")
-arraylist_language.append("French")
-arraylist_language.append("Frisian")
-arraylist_language.append("Galician")
-arraylist_language.append("Georgian")
-arraylist_language.append("German")
-arraylist_language.append("Greek")
-arraylist_language.append("Guarani")
-arraylist_language.append("Gujarati")
-arraylist_language.append("Haitian Creole")
-arraylist_language.append("Hausa")
-arraylist_language.append("Hawaiian")
-arraylist_language.append("Hebrew")
-arraylist_language.append("Hindi")
-arraylist_language.append("Hmong")
-arraylist_language.append("Hungarian")
-arraylist_language.append("Icelandic")
-arraylist_language.append("Igbo")
-arraylist_language.append("Ilocano")
-arraylist_language.append("Indonesian")
-arraylist_language.append("Irish")
-arraylist_language.append("Italian")
-arraylist_language.append("Japanese")
-arraylist_language.append("Javanese")
-arraylist_language.append("Kannada")
-arraylist_language.append("Kazakh")
-arraylist_language.append("Khmer")
-arraylist_language.append("Kinyarwanda (Rwanda)")
-arraylist_language.append("Konkani")
-arraylist_language.append("Korean")
-arraylist_language.append("Krio")
-arraylist_language.append("Kurdish (Kurmanji)")
-arraylist_language.append("Kurdish (Sorani)")
-arraylist_language.append("Kyrgyz")
-arraylist_language.append("Lao")
-arraylist_language.append("Latin")
-arraylist_language.append("Latvian (Lettish)")
-arraylist_language.append("Lingala")
-arraylist_language.append("Lithuanian")
-arraylist_language.append("Luganda, Ganda")
-arraylist_language.append("Luxembourgish")
-arraylist_language.append("Macedonian")
-arraylist_language.append("Malagasy")
-arraylist_language.append("Malay")
-arraylist_language.append("Malayalam")
-arraylist_language.append("Maltese")
-arraylist_language.append("Maori")
-arraylist_language.append("Marathi")
-arraylist_language.append("Meiteilon (Manipuri)")
-arraylist_language.append("Mizo")
-arraylist_language.append("Mongolian")
-arraylist_language.append("Myanmar (Burmese)")
-arraylist_language.append("Nepali")
-arraylist_language.append("Norwegian")
-arraylist_language.append("Oriya")
-arraylist_language.append("Oromo (Afaan Oromo)")
-arraylist_language.append("Pashto, Pushto")
-arraylist_language.append("Persian (Farsi)")
-arraylist_language.append("Polish")
-arraylist_language.append("Portuguese")
-arraylist_language.append("Punjabi (Eastern)")
-arraylist_language.append("Quechua")
-arraylist_language.append("Romanian, Moldavian")
-arraylist_language.append("Russian")
-arraylist_language.append("Samoan")
-arraylist_language.append("Sanskrit")
-arraylist_language.append("Scots Gaelic")
-arraylist_language.append("Sepedi")
-arraylist_language.append("Serbian")
-arraylist_language.append("Sesotho")
-arraylist_language.append("Shona")
-arraylist_language.append("Sindhi")
-arraylist_language.append("Sinhalese")
-arraylist_language.append("Slovak")
-arraylist_language.append("Slovenian")
-arraylist_language.append("Somali")
-arraylist_language.append("Spanish")
-arraylist_language.append("Sundanese")
-arraylist_language.append("Swahili (Kiswahili)")
-arraylist_language.append("Swedish")
-arraylist_language.append("Tajik")
-arraylist_language.append("Tamil")
-arraylist_language.append("Tatar")
-arraylist_language.append("Telugu")
-arraylist_language.append("Thai")
-arraylist_language.append("Tigrinya")
-arraylist_language.append("Tsonga")
-arraylist_language.append("Turkish")
-arraylist_language.append("Turkmen")
-arraylist_language.append("Twi")
-arraylist_language.append("Ukrainian")
-arraylist_language.append("Urdu")
-arraylist_language.append("Uyghur")
-arraylist_language.append("Uzbek")
-arraylist_language.append("Vietnamese")
-arraylist_language.append("Welsh")
-arraylist_language.append("Xhosa")
-arraylist_language.append("Yiddish")
-arraylist_language.append("Yoruba")
-arraylist_language.append("Zulu")
+arraylist_language.append("Afrikaans");
+arraylist_language.append("Albanian");
+arraylist_language.append("Amharic");
+arraylist_language.append("Arabic");
+arraylist_language.append("Armenian");
+arraylist_language.append("Assamese");
+arraylist_language.append("Aymara");
+arraylist_language.append("Azerbaijani");
+arraylist_language.append("Bambara");
+arraylist_language.append("Basque");
+arraylist_language.append("Belarusian");
+arraylist_language.append("Bengali");
+arraylist_language.append("Bhojpuri");
+arraylist_language.append("Bosnian");
+arraylist_language.append("Bulgarian");
+arraylist_language.append("Catalan");
+arraylist_language.append("Cebuano");
+arraylist_language.append("Chichewa");
+arraylist_language.append("Chinese (Simplified)");
+arraylist_language.append("Chinese (Traditional)");
+arraylist_language.append("Corsican");
+arraylist_language.append("Croatian");
+arraylist_language.append("Czech");
+arraylist_language.append("Danish");
+arraylist_language.append("Dhivehi");
+arraylist_language.append("Dogri");
+arraylist_language.append("Dutch");
+arraylist_language.append("English");
+arraylist_language.append("Esperanto");
+arraylist_language.append("Estonian");
+arraylist_language.append("Ewe");
+arraylist_language.append("Filipino");
+arraylist_language.append("Finnish");
+arraylist_language.append("French");
+arraylist_language.append("Frisian");
+arraylist_language.append("Galician");
+arraylist_language.append("Georgian");
+arraylist_language.append("German");
+arraylist_language.append("Greek");
+arraylist_language.append("Guarani");
+arraylist_language.append("Gujarati");
+arraylist_language.append("Haitian Creole");
+arraylist_language.append("Hausa");
+arraylist_language.append("Hawaiian");
+arraylist_language.append("Hebrew");
+arraylist_language.append("Hindi");
+arraylist_language.append("Hmong");
+arraylist_language.append("Hungarian");
+arraylist_language.append("Icelandic");
+arraylist_language.append("Igbo");
+arraylist_language.append("Ilocano");
+arraylist_language.append("Indonesian");
+arraylist_language.append("Irish");
+arraylist_language.append("Italian");
+arraylist_language.append("Japanese");
+arraylist_language.append("Javanese");
+arraylist_language.append("Kannada");
+arraylist_language.append("Kazakh");
+arraylist_language.append("Khmer");
+arraylist_language.append("Kinyarwanda");
+arraylist_language.append("Konkani");
+arraylist_language.append("Korean");
+arraylist_language.append("Krio");
+arraylist_language.append("Kurdish (Kurmanji)");
+arraylist_language.append("Kurdish (Sorani)");
+arraylist_language.append("Kyrgyz");
+arraylist_language.append("Lao");
+arraylist_language.append("Latin");
+arraylist_language.append("Latvian");
+arraylist_language.append("Lingala");
+arraylist_language.append("Lithuanian");
+arraylist_language.append("Luganda");
+arraylist_language.append("Luxembourgish");
+arraylist_language.append("Macedonian");
+arraylist_language.append("Malagasy");
+arraylist_language.append("Malay");
+arraylist_language.append("Malayalam");
+arraylist_language.append("Maltese");
+arraylist_language.append("Maori");
+arraylist_language.append("Marathi");
+arraylist_language.append("Meiteilon (Manipuri)");
+arraylist_language.append("Mizo");
+arraylist_language.append("Mongolian");
+arraylist_language.append("Myanmar (Burmese)");
+arraylist_language.append("Nepali");
+arraylist_language.append("Norwegian");
+arraylist_language.append("Odiya (Oriya)");
+arraylist_language.append("Oromo");
+arraylist_language.append("Pashto");
+arraylist_language.append("Persian");
+arraylist_language.append("Polish");
+arraylist_language.append("Portuguese");
+arraylist_language.append("Punjabi");
+arraylist_language.append("Quechua");
+arraylist_language.append("Romanian");
+arraylist_language.append("Russian");
+arraylist_language.append("Samoan");
+arraylist_language.append("Sanskrit");
+arraylist_language.append("Scots Gaelic");
+arraylist_language.append("Sepedi");
+arraylist_language.append("Serbian");
+arraylist_language.append("Sesotho");
+arraylist_language.append("Shona");
+arraylist_language.append("Sindhi");
+arraylist_language.append("Sinhala");
+arraylist_language.append("Slovak");
+arraylist_language.append("Slovenian");
+arraylist_language.append("Somali");
+arraylist_language.append("Spanish");
+arraylist_language.append("Sundanese");
+arraylist_language.append("Swahili");
+arraylist_language.append("Swedish");
+arraylist_language.append("Tajik");
+arraylist_language.append("Tamil");
+arraylist_language.append("Tatar");
+arraylist_language.append("Telugu");
+arraylist_language.append("Thai");
+arraylist_language.append("Tigrinya");
+arraylist_language.append("Tsonga");
+arraylist_language.append("Turkish");
+arraylist_language.append("Turkmen");
+arraylist_language.append("Twi (Akan)");
+arraylist_language.append("Ukrainian");
+arraylist_language.append("Urdu");
+arraylist_language.append("Uyghur");
+arraylist_language.append("Uzbek");
+arraylist_language.append("Vietnamese");
+arraylist_language.append("Welsh");
+arraylist_language.append("Xhosa");
+arraylist_language.append("Yiddish");
+arraylist_language.append("Yoruba");
+arraylist_language.append("Zulu");
+
 
 map_code_of_language = dict(zip(arraylist_language, arraylist_language_code))
 map_language_of_code = dict(zip(arraylist_language_code, arraylist_language))
@@ -346,8 +347,43 @@ def srt_formatter(subtitles, padding_before=0, padding_after=0):
     return '\n'.join(six.text_type(item) for item in sub_rip_file)
 
 
+def vtt_formatter(subtitles, padding_before=0, padding_after=0):
+    """
+    Serialize a list of subtitles according to the VTT format, with optional time padding.
+    """
+    text = srt_formatter(subtitles, padding_before, padding_after)
+    text = 'WEBVTT\n\n' + text.replace(',', '.')
+    return text
+
+
+def json_formatter(subtitles):
+    """
+    Serialize a list of subtitles as a JSON blob.
+    """
+    subtitle_dicts = [
+        {
+            'start': start,
+            'end': end,
+            'content': text,
+        }
+        for ((start, end), text)
+        in subtitles
+    ]
+    return json.dumps(subtitle_dicts)
+
+
+def raw_formatter(subtitles):
+    """
+    Serialize a list of subtitles as a newline-delimited string.
+    """
+    return ' '.join(text for (_rng, text) in subtitles)
+
+
 FORMATTERS = {
     'srt': srt_formatter,
+    'vtt': vtt_formatter,
+    'json': json_formatter,
+    'raw': raw_formatter,
 }
 
 
@@ -420,8 +456,6 @@ class SpeechRecognizer(object):
 
         except KeyboardInterrupt:
             return
-
-
 
 def extract_audio(filename, channels=1, rate=16000):
     temp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
@@ -614,7 +648,8 @@ class SubtitleTranslator(object):
             translated_subtitles.append(translated_subtitle + '\n')
         return number_in_sequence, timecode, translated_subtitles
 
-class TranscriptTranslator(object):
+
+class TranscriptionTranslator(object):
     def __init__(self, src, dest, patience=-1):
         self.src = src
         self.dest = dest
@@ -783,9 +818,10 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
 
                 # CONCURRENT TRANSLATIONS USING 'class TransctiptionTranslator()'
                 # BETTER PERFORMANCE (SENTENCE BY SENTENCE TRANSLATION)
-                transcript_translator = TranscriptTranslator(src=src, dest=dest)
+                transcript_translator = TranscriptionTranslator(src=src, dest=dest)
                 translated_transcriptions = []
                 time.sleep(2)
+                print("src = {}, dest = {}".format(src, dest))
                 for i, translated_transcription in enumerate(pool.imap(transcript_translator, transcriptions)):
                     translated_transcriptions.append(translated_transcription)
                     pBar(i, len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
@@ -836,16 +872,16 @@ def transcribe(src, dest, filename, file_display_name, activity, textview_debug)
                 if os.path.isdir(srt_folder_name): os.remove(srt_folder_name)
             pool.terminate()
             pool.close()
-            #if forked_pid: os.kill(forked_pid, signal.SIGINT)
-            if forked_pid: os.kill(forked_pid, signal.SIGBREAK)
-            #if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
-            if transcribe_pid: os.kill(transcribe_pid, signal.SIGBREAK)
-            #os.kill(os.fork(), signal.SIGINT)
-            os.kill(os.fork(), signal.SIGBREAK)
-            #os.kill(os.getpid(), signal.SIGINT)
-            os.kill(os.getpid(), signal.SIGBREAK)
-            #signal.signal(signal.SIGINT, signal_handle)
-            signal.signal(signal.SIGBREAK, signal_handle)
+            if forked_pid: os.kill(forked_pid, signal.SIGINT)
+            #if forked_pid: os.kill(forked_pid, signal.SIGBREAK)
+            if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
+            #if transcribe_pid: os.kill(transcribe_pid, signal.SIGBREAK)
+            os.kill(os.fork(), signal.SIGINT)
+            #os.kill(os.fork(), signal.SIGBREAK)
+            os.kill(os.getpid(), signal.SIGINT)
+            #os.kill(os.getpid(), signal.SIGBREAK)
+            signal.signal(signal.SIGINT, signal_handle)
+            #signal.signal(signal.SIGBREAK, signal_handle)
             sys.exit(0)
             return
 

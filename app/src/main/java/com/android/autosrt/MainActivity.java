@@ -4,9 +4,12 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.text.TextUtils.substring;
 
+import static com.arthenica.mobileffmpeg.Config.TAG;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,6 +23,7 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -38,6 +42,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,9 +61,14 @@ public class MainActivity extends AppCompatActivity {
     Map<String, String> map_src_country = new HashMap<>();
     Map<String, String> map_dst_country = new HashMap<>();
     public static String src_country, dst_country;
+    ArrayList<String> arraylist_subtitle_format = new ArrayList<>();
 
     Spinner spinner_src_languages;
+    @SuppressLint("StaticFieldLeak")
+    public static TextView textview_src;
     Spinner spinner_dst_languages;
+    @SuppressLint("StaticFieldLeak")
+    public static TextView textview_dst;
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_fileURI;
     @SuppressLint("StaticFieldLeak")
@@ -62,7 +76,12 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_fileDisplayName;
     @SuppressLint("StaticFieldLeak")
-    public static Button button_browse, button_start;
+    public static Button button_browse;
+    @SuppressLint("StaticFieldLeak")
+    Spinner spinner_subtitle_format;
+    @SuppressLint("StaticFieldLeak")
+    public static TextView textview_subtitle_format;
+    public static Button button_start;
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_output;
 
@@ -612,15 +631,25 @@ public class MainActivity extends AppCompatActivity {
             map_dst_country.put(arraylist_dst_languages.get(i), arraylist_dst.get(i));
         }
 
+        arraylist_subtitle_format.add("srt");
+        arraylist_subtitle_format.add("vtt");
+        arraylist_subtitle_format.add("json");
+        arraylist_subtitle_format.add("raw");
+
         setContentView(R.layout.activity_main);
         spinner_src_languages = findViewById(R.id.spinner_src_languages);
         setup_src_spinner(arraylist_src_languages);
+        textview_src = findViewById(R.id.textview_src);
         spinner_dst_languages = findViewById(R.id.spinner_dst_languages);
         setup_dst_spinner(arraylist_dst_languages);
+        textview_dst = findViewById(R.id.textview_dst);
         textview_fileURI = findViewById(R.id.textview_fileURI);
         textview_filePath = findViewById(R.id.textview_filePath);
         textview_fileDisplayName = findViewById(R.id.textview_fileDisplayName);
         button_browse = findViewById(R.id.button_browse);
+        spinner_subtitle_format = findViewById(R.id.spinner_subtitle_format);
+        setup_subtitle_format(arraylist_subtitle_format);
+        textview_subtitle_format = findViewById(R.id.textview_subtitle_format);
         button_start = findViewById(R.id.button_start);
         textview_output = findViewById(R.id.textview_output);
         spinner_src_languages.setFocusable(true);
@@ -636,6 +665,7 @@ public class MainActivity extends AppCompatActivity {
 
         TRANSCRIBE_STATUS.IS_TRANSCRIBING = false;
         CANCEL_STATUS.IS_CANCELING = true;
+        SUBTITLE.FORMAT = "srt";
 
         if (SDK_INT >= Build.VERSION_CODES.Q && Environment.isExternalStorageRemovable()) {
             Uri uri = Uri.parse("package:" + MainActivity.this.getPackageName());
@@ -653,6 +683,10 @@ public class MainActivity extends AppCompatActivity {
                 LANGUAGE.DST = map_dst_country.get(dst_country);
                 LANGUAGE.SRC_COUNTRY = src_country;
                 LANGUAGE.DST_COUNTRY = dst_country;
+                runOnUiThread(() -> {
+                    String lsrc = "LANGUAGE.SRC = " + LANGUAGE.SRC;
+                    textview_src.setText(lsrc);
+                });
             }
 
             @Override
@@ -663,6 +697,10 @@ public class MainActivity extends AppCompatActivity {
                 LANGUAGE.DST = map_dst_country.get(dst_country);
                 LANGUAGE.SRC_COUNTRY = src_country;
                 LANGUAGE.DST_COUNTRY = dst_country;
+                runOnUiThread(() -> {
+                    String lsrc = "LANGUAGE.SRC = " + LANGUAGE.SRC;
+                    textview_src.setText(lsrc);
+                });
             }
         });
 
@@ -675,6 +713,10 @@ public class MainActivity extends AppCompatActivity {
                 LANGUAGE.DST = map_dst_country.get(dst_country);
                 LANGUAGE.SRC_COUNTRY = src_country;
                 LANGUAGE.DST_COUNTRY = dst_country;
+                runOnUiThread(() -> {
+                    String ldst = "LANGUAGE.DST = " + LANGUAGE.DST;
+                    textview_dst.setText(ldst);
+                });
             }
 
             @Override
@@ -685,6 +727,10 @@ public class MainActivity extends AppCompatActivity {
                 LANGUAGE.DST = map_dst_country.get(dst_country);
                 LANGUAGE.SRC_COUNTRY = src_country;
                 LANGUAGE.DST_COUNTRY = dst_country;
+                runOnUiThread(() -> {
+                    String ldst = "LANGUAGE.DST = " + LANGUAGE.DST;
+                    textview_dst.setText(ldst);
+                });
             }
         });
 
@@ -696,6 +742,26 @@ public class MainActivity extends AppCompatActivity {
             intent.setType("*/*");
             mStartForActivity.launch(intent);
         });
+
+        spinner_subtitle_format.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                SUBTITLE.FORMAT = spinner_subtitle_format.getSelectedItem().toString();
+                runOnUiThread(() -> {
+                    String sf = "SUBTITLE.FORMAT = " + SUBTITLE.FORMAT;
+                    textview_subtitle_format.setText(sf);
+                });
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+                runOnUiThread(() -> {
+                    String sf = "SUBTITLE.FORMAT = " + SUBTITLE.FORMAT;
+                    textview_subtitle_format.setText(sf);
+                });
+            }
+        });
+
 
         button_start.setOnClickListener(view -> {
             if (FILE.URI != null) {
@@ -754,6 +820,15 @@ public class MainActivity extends AppCompatActivity {
         spinner_dst_languages.setSelection(supported_languages.indexOf("Indonesian"));
     }
 
+    public void setup_subtitle_format(ArrayList<String> supported_formats) {
+        Collections.sort(supported_formats);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.spinner_textview_align, supported_formats);
+        adapter.setDropDownViewResource(R.layout.spinner_textview_align);
+        spinner_subtitle_format.setAdapter(adapter);
+        spinner_subtitle_format.setSelection(supported_formats.indexOf("srt"));
+    }
+
+
     ActivityResultLauncher<Intent> mStartForActivity = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
@@ -767,8 +842,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         FILE.PATH = Uri2Path(getApplicationContext(), FILE.URI);
                         FILE.DISPLAY_NAME = queryName(getApplicationContext(), FILE.URI);
-                        FILE.SRT_FINAL_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + ".srt";
-                        FILE.SRT_TRANSLATED_FINAL_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "_translated.srt";
+                        SUBTITLE.FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "." + SUBTITLE.FORMAT;
+                        SUBTITLE.TRANSLATED_FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "_translated." + SUBTITLE.FORMAT;
                         runOnUiThread(() -> {
                             String t1 = "FILE.URI = " + FILE.URI;
                             textview_fileURI.setText(t1);
@@ -877,6 +952,60 @@ public class MainActivity extends AppCompatActivity {
     private static boolean fileExists(String filePath) {
         File file = new File(filePath);
         return file.exists();
+    }
+
+    private void writeTextFile(String fileName) {
+        OutputStream outputStream;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName); // file name required to contain extestion file mime
+            values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS+"/DIRECTORY_NAME"); //DIRECTORY
+            Uri extVolumeUri = MediaStore.Files.getContentUri("external");
+            Uri fileUri = getApplicationContext().getContentResolver().insert(extVolumeUri, values);
+            try {
+                outputStream = getApplicationContext().getContentResolver().openOutputStream(fileUri);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else {
+            File root = new File(Environment.getExternalStorageDirectory()+File.separator+"DIRECTORY_NAME", "images");
+            File file = new File(root, fileName );
+            Log.d(TAG, "saveFile: file path - " + file.getAbsolutePath());
+            try {
+                outputStream = new FileOutputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Uri uri = Uri.fromFile(new File(SUBTITLE.TRANSLATED_FILE_PATH));
+        InputStream inputStream;
+        try {
+            inputStream = getApplicationContext().getContentResolver().openInputStream(uri);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        //byte[] bytes = bodyData.getBytes();
+        byte[] bytes = new byte[1024];
+        int length;
+        while (true) {
+            try {
+                if (!((length = inputStream.read(bytes)) > 0)) break;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                outputStream.write(bytes, 0, length);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

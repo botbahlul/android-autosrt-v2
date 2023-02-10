@@ -1,5 +1,5 @@
 # android-autosrt-v2
-ANDROID APP to AUTO GENERATE SRT subtitle file and TRANSLATED SRT subtitle file for any audio/video files
+ANDROID APP to AUTO GENERATE SUBTITLE FILE and TRANSLATED SUBTITLE FILE for any audio/video files
 
 https://user-images.githubusercontent.com/88623122/216783365-b9743b8c-0c52-4c84-b856-cb9f0ad1cbd2.mp4
 

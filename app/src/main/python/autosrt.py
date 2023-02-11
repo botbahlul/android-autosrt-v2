@@ -15,16 +15,12 @@ try:
 except ImportError:
     JSONDecodeError = ValueError
 
-from progressbar import ProgressBar, Percentage, Bar, ETA
-from pygoogletranslation import Translator
+from googletrans import Translator
 import pysrt
 import six
-import ntpath
-from pathlib import Path
 from threading import Timer, Thread
 
 from com.arthenica.mobileffmpeg import FFmpeg
-from com.arthenica.mobileffmpeg import FFprobe
 from os.path import dirname, join
 from com.chaquo.python import Python
 from java import dynamic_proxy, static_proxy
@@ -321,7 +317,6 @@ arraylist_language.append("Xhosa");
 arraylist_language.append("Yiddish");
 arraylist_language.append("Yoruba");
 arraylist_language.append("Zulu");
-
 
 map_code_of_language = dict(zip(arraylist_language, arraylist_language_code))
 map_language_of_code = dict(zip(arraylist_language_code, arraylist_language))

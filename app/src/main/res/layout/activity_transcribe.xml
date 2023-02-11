@@ -18,13 +18,36 @@
         >
 
         <TextView
+            android:id="@+id/textview_isTranscribing"
+            android:hint="@string/transcribe_status"
+            android:padding="5dp"
+            android:gravity="start"
+            android:textAlignment="gravity"
+            android:textSize="14sp"
+            android:scrollbars="vertical"
+            android:isScrollContainer="true"
+            android:background="@android:drawable/editbox_background"
+            android:typeface="sans"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="1dp"
+            tools:ignore="RtlHardcoded,SmallSp"
+            />
+
+        <TextView
             android:id="@+id/textview_src"
+            android:hint="LANGUAGE.SRC_LANGUAGE"
             android:padding="5dp"
             android:gravity="start"
             android:textAlignment="gravity"
             android:textSize="14sp"
             android:background="@android:drawable/editbox_background"
             android:typeface="sans"
+            android:layout_below="@+id/textview_isTranscribing"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
@@ -36,6 +59,7 @@
 
         <TextView
             android:id="@+id/textview_dst"
+            android:hint="LANGUAGE.DST_LANGUAGE"
             android:padding="5dp"
             android:gravity="start"
             android:textAlignment="gravity"
@@ -46,7 +70,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="0dp"
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             android:layout_centerHorizontal="true"
@@ -54,6 +78,7 @@
 
         <TextView
             android:id="@+id/textview_filepath"
+            android:hint="FILE.PATH"
             android:padding="5dp"
             android:gravity="start"
             android:textAlignment="gravity"
@@ -64,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="0dp"
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="5dp"
             android:layout_centerHorizontal="true"

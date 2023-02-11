@@ -77,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
     public static TextView textview_fileDisplayName;
     @SuppressLint("StaticFieldLeak")
     public static Button button_browse;
-    @SuppressLint("StaticFieldLeak")
     Spinner spinner_subtitle_format;
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_subtitle_format;
@@ -734,15 +733,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        button_browse.setOnClickListener(view -> {
-            textview_output.setText("");
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            String[] mimeTypes = {"video/*", "audio/*"};
-            intent.setType("*/*");
-            mStartForActivity.launch(intent);
-        });
-
         spinner_subtitle_format.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -755,6 +745,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
+                SUBTITLE.FORMAT = spinner_subtitle_format.getSelectedItem().toString();
                 runOnUiThread(() -> {
                     String sf = "SUBTITLE.FORMAT = " + SUBTITLE.FORMAT;
                     textview_subtitle_format.setText(sf);
@@ -762,6 +753,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        button_browse.setOnClickListener(view -> {
+            textview_output.setText("");
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            String[] mimeTypes = {"video/*", "audio/*"};
+            intent.setType("*/*");
+            mStartForActivity.launch(intent);
+        });
 
         button_start.setOnClickListener(view -> {
             if (FILE.URI != null) {

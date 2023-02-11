@@ -123,6 +123,59 @@
 
 
         <TextView
+            android:id="@+id/textview_text3"
+            android:text="Subtitle format"
+            android:padding="0dp"
+            android:gravity="start|center"
+            android:textAlignment="gravity"
+            android:textSize="16sp"
+            android:layout_width="160dp"
+            android:layout_height="48dp"
+            android:layout_below="@+id/textview_dst"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="1dp"
+            />
+
+        <Spinner
+            android:id="@+id/spinner_subtitle_format"
+            android:hint="SUBTITLE.FORMAT"
+            android:spinnerMode="dropdown"
+            android:minHeight="48dp"
+            android:padding="0dp"
+            android:gravity="start"
+            android:textAlignment="gravity"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_toEndOf="@+id/textview_text3"
+            android:layout_below="@+id/textview_dst"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="1dp"
+            android:layout_centerHorizontal="true"
+            />
+
+        <TextView
+            android:id="@+id/textview_subtitle_format"
+            android:hint="SUBTITLE.FORMAT"
+            android:padding="5dp"
+            android:gravity="start"
+            android:textAlignment="gravity"
+            android:textSize="14sp"
+            android:background="@android:drawable/editbox_background"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textview_text3"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="5dp"
+            />
+
+        <TextView
             android:id="@+id/textview_fileURI"
             android:hint="@string/file_uri"
             android:minHeight="24dp"
@@ -133,7 +186,7 @@
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/textview_dst"
+            android:layout_below="@+id/textview_subtitle_format"
             android:layout_marginStart="5dp"
             android:layout_marginTop="5dp"
             android:layout_marginEnd="5dp"
@@ -200,59 +253,6 @@
             android:layout_marginBottom="5dp"
             />
 
-        <TextView
-            android:id="@+id/textview_text3"
-            android:text="Subtitle format"
-            android:padding="0dp"
-            android:gravity="start|center"
-            android:textAlignment="gravity"
-            android:textSize="16sp"
-            android:layout_width="160dp"
-            android:layout_height="48dp"
-            android:layout_below="@+id/button_browse"
-            android:layout_marginStart="5dp"
-            android:layout_marginTop="5dp"
-            android:layout_marginEnd="5dp"
-            android:layout_marginBottom="1dp"
-            />
-
-        <Spinner
-            android:id="@+id/spinner_subtitle_format"
-            android:hint="SUBTITLE.FORMAT"
-            android:spinnerMode="dropdown"
-            android:minHeight="48dp"
-            android:padding="0dp"
-            android:gravity="start"
-            android:textAlignment="gravity"
-            android:backgroundTint="@color/colorPrimary"
-            android:layout_toEndOf="@+id/textview_text3"
-            android:layout_below="@+id/button_browse"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:layout_marginTop="5dp"
-            android:layout_marginEnd="5dp"
-            android:layout_marginBottom="1dp"
-            android:layout_centerHorizontal="true"
-            />
-
-        <TextView
-            android:id="@+id/textview_subtitle_format"
-            android:hint="SUBTITLE.FORMAT"
-            android:padding="5dp"
-            android:gravity="start"
-            android:textAlignment="gravity"
-            android:textSize="14sp"
-            android:background="@android:drawable/editbox_background"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/textview_text3"
-            android:layout_marginStart="5dp"
-            android:layout_marginTop="0dp"
-            android:layout_marginEnd="5dp"
-            android:layout_marginBottom="5dp"
-            />
-
         <Button
             android:id="@+id/button_start"
             android:text="@string/start"
@@ -262,7 +262,7 @@
             android:textSize="14sp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/textview_subtitle_format"
+            android:layout_below="@+id/button_browse"
             android:layout_marginStart="5dp"
             android:layout_marginTop="5dp"
             android:layout_marginEnd="5dp"

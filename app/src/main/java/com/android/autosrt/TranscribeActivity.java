@@ -140,7 +140,6 @@ public class TranscribeActivity extends AppCompatActivity {
     public void onBackPressed() {
         showConfirmationDialogue();
         //finish();
-
     }
 
     @Override
@@ -519,7 +518,7 @@ public class TranscribeActivity extends AppCompatActivity {
         }
 
         OutputStream outputStreamTranslated;
-        String savedTanslatedsubtitleFilePath = substring(FILE.DISPLAY_NAME,0,FILE.DISPLAY_NAME.length()-4) + "_translated." + SUBTITLE.FORMAT;
+        String savedTanslatedsubtitleFilePath = substring(FILE.DISPLAY_NAME,0,FILE.DISPLAY_NAME.length()-4) + ".translated." + SUBTITLE.FORMAT;
         if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues values = new ContentValues();
@@ -547,7 +546,7 @@ public class TranscribeActivity extends AppCompatActivity {
                 }
             }
 
-            String translatedSubtitleFile = substring(subtitleFile, 0, subtitleFile.length() - 4) + "_translated." + SUBTITLE.FORMAT;
+            String translatedSubtitleFile = substring(subtitleFile, 0, subtitleFile.length() - 4) + ".translated." + SUBTITLE.FORMAT;
             Uri uriTranslated = Uri.fromFile(new File(translatedSubtitleFile));
             InputStream inputStreamTranslated;
             try {

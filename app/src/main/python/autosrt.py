@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, print_function, unicode_literals
-
 import audioop
 import math
 import multiprocessing
 import threading
-import io, sys, os, time, datetime, signal
+import io, sys, os, time, signal
 import tempfile
 import wave
 import json
@@ -14,15 +13,14 @@ try:
     from json.decoder import JSONDecodeError
 except ImportError:
     JSONDecodeError = ValueError
-
-from googletrans import Translator
 import pysrt
 import six
-from threading import Timer, Thread
+import httpx
 
 from com.arthenica.mobileffmpeg import FFmpeg
 from os.path import dirname, join
 from com.chaquo.python import Python
+
 from java import dynamic_proxy, static_proxy
 from java.lang import Runnable
 
@@ -33,7 +31,6 @@ cache_dir = str(context.getExternalCacheDir())
 transcriptions_file = join(cache_dir, "transcriptions.txt")
 region_start_file = join(cache_dir, 'region_starts.txt')
 elapsed_time_file = join(cache_dir, 'elapsed_time.txt')
-canceled = False
 wav_filename = None
 converter = None
 recognizer = None
@@ -43,8 +40,6 @@ subtitle_file = None
 translated_subtitle_file = None
 subtitle_folder_name = None
 pool = None
-transcribe_pid = None
-forked_pid = None
 
 GOOGLE_SPEECH_API_KEY = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
 GOOGLE_SPEECH_API_URL = "http://www.google.com/speech-api/v2/recognize?client=chromium&lang={lang}&key={key}" # pylint: disable=line-too-long
@@ -393,12 +388,6 @@ def is_same_language(lang1, lang2):
     return lang1.split("-")[0] == lang2.split("-")[0]
 
 
-class ThreadWithResult(Thread):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
-        def function():
-            self.result = target(*args, **kwargs)
-        super().__init__(group=group, target=function, name=name, daemon=daemon)
-
 class FLACConverter(object):
     def __init__(self, source_path, include_before=0.25, include_after=0.25):
         self.source_path = source_path
@@ -500,145 +489,26 @@ def find_speech_regions(filename, frame_width=4096, min_region_size=0.3, max_reg
 
     return regions
 
-'''
-def CountEntries(subtitle_file):
-    e=0
-    with open(subtitle_file, 'r', encoding='utf-8') as srt:
-        while True:
-            e += 1
-            # read lines in order
-            number_in_sequence = srt.readline()
-            timecode = srt.readline()
-            # whether it's the end of the file.
-            if not number_in_sequence:
-                break
-            # put all subtitles seperated by newline into a list.
-            subtitles = []
-            while True:
-                subtitle = srt.readline()
-                # whether it's the end of a entry.
-                if subtitle == '\n':
-                    break
-                subtitles.append(subtitle)
-    total_entries = e - 1
-    #print('Total Entries', total_entries)
-    return total_entries
 
+def GoogleTranslate(text, src, dst):
+    url = 'https://translate.googleapis.com/translate_a/'
+    params = 'single?client=gtx&sl='+src+'&tl='+dst+'&dt=t&q='+text;
+    with httpx.Client(http2=True) as client:
+        client.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://translate.google.com',})
+        response = client.get(url+params)
+        #print('response.status_code = {}'.format(response.status_code))
+        if response.status_code == 200:
+            response_json = response.json()[0]
+            #print('response_json = {}'.format(response_json))
+            length = len(response_json)
+            #print('length = {}'.format(length))
+            translation = ""
+            for i in range(length):
+                #print("{} {}".format(i, response_json[i][0]))
+                translation = translation + response_json[i][0]
+            return translation
+        return
 
-def entries_generator(subtitle_file):
-    """Generate a entries queue.
-
-    input:
-        subtitle_file: The original filename. [*.srt]
-
-    output:
-        entries: A queue generator.
-    """
-    with open(subtitle_file, 'r', encoding='utf-8') as srt:
-        while True:
-            # read lines in order
-            number_in_sequence = srt.readline()
-            timecode = srt.readline()
-            # whether it's the end of the file.
-            if not number_in_sequence:
-                break
-            # put all subtitles seperated by newline into a list.
-            subtitles = []
-            while True:
-                subtitle = srt.readline()
-                # whether it's the end of a entry.
-                if subtitle == '\n':
-                    break
-                subtitles.append(subtitle)
-            yield number_in_sequence, timecode, subtitles
-
-
-def translate(entries, src, dest, patience, verbose):
-    """Generate the translated entries.
-
-    args:
-        entries: The entries queue.
-        src: The source language.
-        dest: The target language.
-    """
-    translator = Translator()
-    count_failure = 0
-    count_entries = 0
-
-    for number_in_sequence, timecode, subtitles in entries:
-        count_entries += 1
-        translated_subtitles = []
-
-        for i, subtitle in enumerate(subtitles, 1):
-            # handle the special case: empty string.
-            if not subtitle:
-                translated_subtitles.append(subtitle)
-                continue
-            translated_subtitle = translator.translate(subtitle, src=src, dest=dest).text
-            # handle the fail to translate case.
-            fail_to_translate = translated_subtitle[-1] == '\n'
-            while fail_to_translate and patience:
-                if verbose:
-                    print('[Failure] Retry to translate...')
-                    print('The translated subtitle: {}', end=''.format(translated_subtitle))
-                translated_subtitle = translator.translate(translated_subtitle, src=src, dest=dest).text
-                if translated_subtitle[-1] == '\n':
-                    if patience == -1:
-                        continue
-                    if patience == 1:
-                        if verbose:
-                            print('This subtitle failed to translate... [Position] entry {0} line {1}'.format(count_entries,i))
-                    patience -= 1
-                else:
-                    fail_to_translate = False
-                    if verbose:
-                        print('Translate successfully. The result: {}'.format(translated_subtitle))
-
-            translated_subtitles.append(translated_subtitle if fail_to_translate else translated_subtitle + '\n')
-
-        if fail_to_translate:
-            count_failure += 1
-            print('[{}] Failure to translate current entry...'.format(count_entries))
-
-        yield number_in_sequence, timecode, translated_subtitles, count_failure, count_entries
-
-class SubtitleTranslator(object):
-    def __init__(self, src, dest, patience=-1, verbose=''):
-        self.src = src
-        self.dest = dest
-        self.patience = patience
-        self.verbose = verbose
-
-    def __call__(self, entries):
-        translator = Translator()
-        translated_subtitles = []
-        number_in_sequence, timecode, subtitles = entries
-
-        for i, subtitle in enumerate(subtitles, 1):
-            # handle the special case: empty string.
-            if not subtitle:
-                translated_subtitles.append(subtitle)
-            translated_subtitle = translator.translate(subtitle, src=self.src, dest=self.dest).text
-            fail_to_translate = translated_subtitle[-1] == '\n'
-            while fail_to_translate and patience:
-                if verbose:
-                    print('[Failure] Retry to translate...')
-                    print('The translated subtitle: {}', end=''.format(translated_subtitle))
-                translated_subtitle = translator.translate(translated_subtitle, src=self.src, dest=self.dest).text
-                if translated_subtitle[-1] == '\n':
-                    if patience == -1:
-                        continue
-                    if patience == 1:
-                        if verbose:
-                            print('This subtitle failed to translate... [Position] entry {0} line {1}'.format(count_entries,i))
-                    patience -= 1
-                else:
-                    fail_to_translate = False
-                    if verbose:
-                        print('Translate successfully. The result: {}'.format(translated_subtitle))
-            translated_subtitles.append(translated_subtitle + '\n')
-        return number_in_sequence, timecode, translated_subtitles
-'''
 
 class TranscriptionTranslator(object):
     def __init__(self, src, dest, patience=-1):
@@ -647,13 +517,13 @@ class TranscriptionTranslator(object):
         self.patience = patience
 
     def __call__(self, sentence):
-        translator = Translator()
         translated_sentence = []
-
         # handle the special case: empty string.
         if not sentence:
             return None
-        translated_sentence = translator.translate(sentence, src=self.src, dest=self.dest).text
+
+        translated_sentence = GoogleTranslate(sentence, src=self.src, dst=self.dest)
+
         fail_to_translate = translated_sentence[-1] == '\n'
         while fail_to_translate and patience:
             translated_sentence = translator.translate(translated_sentence, src=self.src, dest=self.dest).text
@@ -667,25 +537,38 @@ class TranscriptionTranslator(object):
 
 
 def transcribe(src, dest, filename, file_display_name, subtitle_format, activity, textview_debug):
-    global transcribe_pid, forked_pid, pool, wav_filename, subtitle_file, translated_subtitle_file, subtitle_folder_name, converter, recognizer, extracted_regions, transcriptions
-
-    watchdog = threading.Thread(target=check_cancel_file, args=(activity, textview_debug))
-    watchdog.daemon = True
-    watchdog.start()
-
-    pool = multiprocessing.pool.ThreadPool(10)
-    transcribe_pid = os.getpid()
-    forked_pid = os.fork()
+    multiprocessing.freeze_support()
+    if os.path.isfile(cancel_file):
+        os.remove(cancel_file)
+        class R(dynamic_proxy(Runnable)):
+            def run(self):
+                time.sleep(1)
+                textview_debug.setText("")
+                textview_debug.setText("Process has been canceled")
+        activity.runOnUiThread(R())
+        return
 
     wav_filename = None
     subtitle_file = None
     translated_subtitle_file = None
 
+    if os.path.isfile(cancel_file):
+        os.remove(cancel_file)
+        class R(dynamic_proxy(Runnable)):
+            def run(self):
+                time.sleep(1)
+                textview_debug.setText("")
+                textview_debug.setText("Process has been canceled")
+        activity.runOnUiThread(R())
+        return
+
+    pool = multiprocessing.pool.ThreadPool(10)
+
     print("Converting to a temporary WAV file")
     class R(dynamic_proxy(Runnable)):
         def run(self):
             textview_debug.setText("Running python script...\n\n");
-            textview_debug.append("Converting to a temporary WAV file...\n\n");
+            textview_debug.append("Converting to a temporary WAV file...\n\n")
     activity.runOnUiThread(R())
     time.sleep(1)
     wav_filename, audio_rate = extract_audio(filename)
@@ -697,6 +580,17 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
         activity.runOnUiThread(R())
         time.sleep(2)
 
+    if os.path.isfile(cancel_file):
+        os.remove(cancel_file)
+        pool.terminate()
+        pool.close()
+        class R(dynamic_proxy(Runnable)):
+            def run(self):
+                time.sleep(1)
+                textview_debug.setText("")
+                textview_debug.setText("Process has been canceled")
+        activity.runOnUiThread(R())
+        return
 
     print("Finding speech regions of WAV file")
     class R(dynamic_proxy(Runnable)):
@@ -708,185 +602,248 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
     time.sleep(1)
     class R(dynamic_proxy(Runnable)):
         def run(self):
-            textview_debug.append("Speech regions found = " + str(num))
+            textview_debug.append("Speech regions found = " + str(num) + "\n\n")
     activity.runOnUiThread(R())
     print("Speech regions found = {}".format(str(num)))
     time.sleep(3)
 
+    if os.path.isfile(cancel_file):
+        os.remove(cancel_file)
+        pool.terminate()
+        pool.close()
+        class R(dynamic_proxy(Runnable)):
+            def run(self):
+                time.sleep(1)
+                textview_debug.setText("")
+                textview_debug.setText("Process has been canceled")
+        activity.runOnUiThread(R())
+        return
 
     converter = FLACConverter(source_path=wav_filename)
     recognizer = SpeechRecognizer(language=src, rate=audio_rate, api_key=GOOGLE_SPEECH_API_KEY)
     transcriptions = []
-    translated_transcriptions = []
+
+    if os.path.isfile(cancel_file):
+        os.remove(cancel_file)
+        pool.terminate()
+        pool.close()
+        class R(dynamic_proxy(Runnable)):
+            def run(self):
+                time.sleep(1)
+                textview_debug.setText("")
+                textview_debug.setText("Process has been canceled")
+        activity.runOnUiThread(R())
+        return
 
     if regions:
-        try:
-            print("Converting speech regions to FLAC files")
-            extracted_regions = []
-            time.sleep(2)
-            for i, extracted_region in enumerate(pool.imap(converter, regions)):
-                extracted_regions.append(extracted_region)
-                pBar(i, len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
-            time.sleep(1)
-            pBar(len(regions), len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
-        
-            print("Creating transcriptions")
-            time.sleep(2)
-            for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
-                transcriptions.append(transcription)
-                pBar(i, len(regions), "Creating transcriptions: ", activity, textview_debug)
-            time.sleep(1)
-            pBar(len(regions), len(regions), "Creating transcriptions: ", activity, textview_debug)
+        time.sleep(2)
+        print("Converting speech regions to FLAC files")
+        extracted_regions = []
+        for i, extracted_region in enumerate(pool.imap(converter, regions)):
 
-            timed_subtitles = [(r, t) for r, t in zip(regions, transcriptions) if t]
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
+
+            extracted_regions.append(extracted_region)
+            pBar(i, len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
+        time.sleep(1)
+        pBar(len(regions), len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
+
+        if os.path.isfile(cancel_file):
+            os.remove(cancel_file)
+            pool.terminate()
+            pool.close()
+            class R(dynamic_proxy(Runnable)):
+                def run(self):
+                    time.sleep(1)
+                    textview_debug.setText("")
+                    textview_debug.setText("Process has been canceled")
+            activity.runOnUiThread(R())
+            return
+
+        time.sleep(2)
+        print("Creating transcriptions")
+        for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
+
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
+
+            transcriptions.append(transcription)
+            pBar(i, len(regions), "Creating transcriptions: ", activity, textview_debug)
+        time.sleep(1)
+        pBar(len(regions), len(regions), "Creating transcriptions: ", activity, textview_debug)
+
+        if os.path.isfile(cancel_file):
+            os.remove(cancel_file)
+            pool.terminate()
+            pool.close()
+            class R(dynamic_proxy(Runnable)):
+                def run(self):
+                    time.sleep(1)
+                    textview_debug.setText("")
+                    textview_debug.setText("Process has been canceled")
+            activity.runOnUiThread(R())
+            return
+
+        timed_subtitles = [(r, t) for r, t in zip(regions, transcriptions) if t]
+        formatter = FORMATTERS.get(subtitle_format)
+        formatted_subtitles = formatter(timed_subtitles)
+
+        files_dir = str(context.getExternalFilesDir(None))
+        subtitle_folder_name = join(files_dir, file_display_name[:-4])
+        if not os.path.isdir(subtitle_folder_name):
+            os.mkdir(subtitle_folder_name)
+        subtitle_file = join(subtitle_folder_name, file_display_name[:-4] + "." + subtitle_format)
+
+        if os.path.isfile(cancel_file):
+            os.remove(cancel_file)
+            pool.terminate()
+            pool.close()
+            class R(dynamic_proxy(Runnable)):
+                def run(self):
+                    time.sleep(1)
+                    textview_debug.setText("")
+                    textview_debug.setText("Process has been canceled")
+            activity.runOnUiThread(R())
+            return
+
+        with open(subtitle_file, 'wb') as f:
+            f.write(formatted_subtitles.encode("utf-8"))
+            f.close()
+
+        with open(subtitle_file, 'a') as f:
+            f.write("\n")
+            f.close()
+
+
+        if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
+
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
+
+            translated_subtitle_file = subtitle_file[ :-4] + '.translated.' + subtitle_format
+
+            transcription_translator = TranscriptionTranslator(src=src, dest=dest)
+            translated_transcriptions = []
+            time.sleep(2)
+            print("Translating transcriptions")
+            for i, translated_transcription in enumerate(pool.imap(transcription_translator, transcriptions)):
+
+                if os.path.isfile(cancel_file):
+                    os.remove(cancel_file)
+                    pool.terminate()
+                    pool.close()
+                    class R(dynamic_proxy(Runnable)):
+                        def run(self):
+                            time.sleep(1)
+                            textview_debug.setText("")
+                            textview_debug.setText("Process has been canceled")
+                    activity.runOnUiThread(R())
+                    return
+
+                translated_transcriptions.append(translated_transcription)
+                pBar(i, len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+            time.sleep(1)
+            pBar(len(transcriptions), len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
+
+            timed_translated_subtitles = [(r, t) for r, t in zip(regions, translated_transcriptions) if t]
             formatter = FORMATTERS.get(subtitle_format)
-            formatted_subtitles = formatter(timed_subtitles)
+            formatted_translated_subtitles = formatter(timed_translated_subtitles)
 
-            #base, ext = os.path.splitext(filename)
-            #subtitle_file = "{base}.{format}".format(base=base, format="srt")
-
-            files_dir = str(context.getExternalFilesDir(None))
-            subtitle_folder_name = join(files_dir, file_display_name[:-4])
-            if not os.path.isdir(subtitle_folder_name):
-                os.mkdir(subtitle_folder_name)
-            subtitle_file = join(subtitle_folder_name, file_display_name[:-4] + "." + subtitle_format)
-
-            with open(subtitle_file, 'wb') as f:
-                f.write(formatted_subtitles.encode("utf-8"))
-                f.close()
-
-            with open(subtitle_file, 'a') as f:
+            with open(translated_subtitle_file, 'wb') as f:
+                f.write(formatted_translated_subtitles.encode("utf-8"))
+            with open(translated_subtitle_file, 'a') as f:
                 f.write("\n")
-                f.close()
 
-            if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
-                print("Translating transcriptions")
-                #entries = entries_generator(subtitle_file)
-                translated_subtitle_file = subtitle_file[ :-4] + '_translated.' + subtitle_format
-                #total_entries = CountEntries(subtitle_file)
-                #print('Total Entries = {}'.format(total_entries))
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
 
-                '''
-                # SEQUENTIAL TRANSLATION USING 'def translate()'
-                # TO SLOW (WORD BY WORD TRANSLATION)
-                e=0
-                with open(translated_subtitle_file, 'w', encoding='utf-8') as f:
-                    time.sleep(1)
-                    for number_in_sequence, timecode, subtitles, count_failure, count_entries in translate(entries, src=src, dest=dest, patience="", verbose=""):
-                        f.write(number_in_sequence)
-                        f.write(timecode)
-                        for subtitle in subtitles:
-                            f.write(subtitle)
-                            f.write('\n')
-                            e += 1
-                            pBar(e, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-                            #pbar.update(e)
-                    #pbar.finish()
-                    pBar(total_entries, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-                    time.sleep(1)
-                '''
-
-                '''
-                # CONCURRENT TRANSLATIONS USING 'class SubtitleTranslator()'
-                # STILL TO SLOW (WORD BY WORD TRANSLATION)
-                subtitle_translator = SubtitleTranslator(src=src, dest=dest)
-                translated_entries = []
-                time.sleep(2)
-                for i, translated_entry in enumerate(pool.imap(subtitle_translator, entries)):
-                    translated_entries.append(translated_entry)
-                    pBar(i, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-                time.sleep(1)
-                pBar(total_entries, total_entries, "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-
-                with open(translated_subtitle_file, 'w', encoding='utf-8') as f:
-                    for number_in_sequence, timecode, translated_subtitles in translated_entries:
-                        f.write(number_in_sequence)
-                        f.write(timecode)
-                        for translated_subtitle in translated_subtitles:
-                            f.write(translated_subtitle)
-                            f.write('\n')
-                '''
-
-                # CONCURRENT TRANSLATIONS USING 'class TransctiptionTranslator()'
-                # BETTER PERFORMANCE (SENTENCE BY SENTENCE TRANSLATION)
-                transcript_translator = TranscriptionTranslator(src=src, dest=dest)
-                translated_transcriptions = []
-                time.sleep(2)
-                print("src = {}, dest = {}".format(src, dest))
-                for i, translated_transcription in enumerate(pool.imap(transcript_translator, transcriptions)):
-                    translated_transcriptions.append(translated_transcription)
-                    pBar(i, len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-                time.sleep(1)
-                pBar(len(transcriptions), len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
-
-                timed_translated_subtitles = [(r, t) for r, t in zip(regions, translated_transcriptions) if t]
-                formatter = FORMATTERS.get(subtitle_format)
-                formatted_translated_subtitles = formatter(timed_translated_subtitles)
-
-                with open(translated_subtitle_file, 'wb') as f:
-                    f.write(formatted_translated_subtitles.encode("utf-8"))
-                with open(translated_subtitle_file, 'a') as f:
-                    f.write("\n")
-
-            print('Done.')
-            print("Temporary subtitles file created at      : {}".format(subtitle_file))
-            if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
-                print('Temporary translated subtitles file created at    : {}' .format(translated_subtitle_file))
+            print('Temporary subtitles file created at            : {}'.format(subtitle_file))
+            print('Temporary translated subtitles file created at : {}'.format(translated_subtitle_file))
             class R(dynamic_proxy(Runnable)):
                 def run(self):
                     time.sleep(1)
                     textview_debug.append("\n\nTemporary subtitles file created at :\n")
                     textview_debug.append(subtitle_file + "\n\n")
-                    if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
-                        textview_debug.append("Temporary translated subtitles file created at :\n")
-                        textview_debug.append(translated_subtitle_file + "\n\n")
+                    textview_debug.append("Temporary translated subtitles file created at:\n")
+                    textview_debug.append(translated_subtitle_file + "\n\n")
             activity.runOnUiThread(R())
+            time.sleep(2)
 
-        except KeyboardInterrupt:
-            canceled = True
-            print("Cancelling transcription")
-            if os.path.isfile(cancel_file): os.remove(cancel_file)
-            print("Killing all threads")
-            if wav_filename:
-                if os.path.isfile(wav_filename): os.remove(wav_filename)
-            if extracted_regions:
-                for extracted_region in extracted_regions:
-                    if os.path.isfile(extracted_region): os.remove(extracted_region)
-            converter = None
-            recognizer = None
-            transcriptions = None
-            if subtitle_file:
-                if os.path.isfile(subtitle_file): os.remove(subtitle_file)
-            if translated_subtitle_file:
-                if os.path.isfile(translated_subtitle_file): os.remove(translated_subtitle_file)
-            if subtitle_folder_name:
-                if os.path.isdir(subtitle_folder_name): os.remove(subtitle_folder_name)
-            pool.terminate()
-            pool.close()
-            if forked_pid: os.kill(forked_pid, signal.SIGINT)
-            #if forked_pid: os.kill(forked_pid, signal.SIGBREAK)
-            if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
-            #if transcribe_pid: os.kill(transcribe_pid, signal.SIGBREAK)
-            os.kill(os.fork(), signal.SIGINT)
-            #os.kill(os.fork(), signal.SIGBREAK)
-            os.kill(os.getpid(), signal.SIGINT)
-            #os.kill(os.getpid(), signal.SIGBREAK)
-            signal.signal(signal.SIGINT, signal_handle)
-            #signal.signal(signal.SIGBREAK, signal_handle)
-            sys.exit(0)
-            return
+            if os.path.isfile(cancel_file):
+                os.remove(cancel_file)
+                pool.terminate()
+                pool.close()
+                class R(dynamic_proxy(Runnable)):
+                    def run(self):
+                        time.sleep(1)
+                        textview_debug.setText("")
+                        textview_debug.setText("Process has been canceled")
+                activity.runOnUiThread(R())
+                return
+
+        elif (is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
+            print("Temporary subtitles file created at      : {}".format(subtitle_file))
+            class R(dynamic_proxy(Runnable)):
+                def run(self):
+                    time.sleep(1)
+                    textview_debug.append("\n\nTemporary subtitles file created at :\n")
+                    textview_debug.append(subtitle_file + "\n\n")
+            activity.runOnUiThread(R())
+            time.sleep(2)
 
     pool.close()
     pool.join()
     pool = None
     os.remove(wav_filename)
-
-    time.sleep(2)
-    #class R(dynamic_proxy(Runnable)):
-        #def run(self):
-            #textview_debug.append("Done!\n\n")
-    #activity.runOnUiThread(R())
-
     return subtitle_file
 
 
@@ -899,6 +856,7 @@ def setText(text, activity, textview_debug):
             textview_debug.setText(self.text)
     activity.runOnUiThread(R(text))
 
+
 def pBar(count_value, total, prefix, activity, textview_debug):
     bar_length = 10
     filled_up_Length = int(round(bar_length*count_value/(total)))
@@ -908,90 +866,3 @@ def pBar(count_value, total, prefix, activity, textview_debug):
         time.sleep(1)
         text = str('%s [%s] %s%s\r' %(prefix, bar, int(percentage), '%'))
         setText(text, activity, textview_debug)
-
-
-def check_cancel_file(activity, textview_debug):
-    global transcribe_pid, forked_pid, pool, wav_filename, subtitle_file, translated_subtitle_file, subtitle_folder_name, converter, recognizer, extracted_regions, transcriptions
-
-    while True:
-        if os.path.isfile(cancel_file):
-            canceled = True
-            os.remove(cancel_file)
-            print("Killing all threads")
-            if pool:
-                pool.terminate()
-                pool.close()
-            if wav_filename:
-                if os.path.isfile(wav_filename): os.remove(wav_filename)
-            if extracted_regions:
-                for extracted_region in extracted_regions:
-                    if os.path.isfile(extracted_region): os.remove(extracted_region)
-            converter = None
-            recognizer = None
-            transcriptions = None
-            if subtitle_file:
-                if os.path.isfile(subtitle_file): os.remove(subtitle_file)
-            if translated_subtitle_file:
-                if os.path.isfile(translated_subtitle_file): os.remove(translated_subtitle_file)
-            if subtitle_folder_name:
-                if os.path.isdir(subtitle_folder_name): os.remove(subtitle_folder_name)
-            if forked_pid: os.kill(forked_pid, signal.SIGINT)
-            if transcribe_pid: os.kill(transcribe_pid, signal.SIGINT)
-            os.kill(os.fork(), signal.SIGINT)
-            os.kill(os.getpid(), signal.SIGINT)
-            sys.exit(0)
-            break
-    return
-
-def signal_handle(_signal, frame):
-    print("Stopping the Jobs.")
-
-def check_stop_signal(stop_event):
-    """
-    Checks continuously (every 0.1 s) if a "stop" flag has been set in the database.
-    Needs to run in its own thread.
-    """
-    while True:
-        if io.check_stop():
-            print("Program was aborted by user.")
-            print("Setting threading stop event...")
-            stop_event.set()
-            break
-        sleep(0.1)
-
-
-class RepeatedTimer(object):
-    def __init__(self, interval, function, *args, **kwargs):
-        self._timer     = None
-        self.interval   = interval
-        self.function   = function
-        self.args       = args
-        self.kwargs     = kwargs
-        self.is_running = False
-        self.start()
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-        self.function(*self.args, **self.kwargs)
-
-    def start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
-
-
-def main(src, dest, filename, activity, textview_debug):
-    global pool, wav_filename, subtitle_file, translated_subtitle_file, converter, recognizer, extracted_regions, transcription
-
-    return transcribe(src, dest, filename, activity, textview_debug)
-
-
-if __name__ == '__main__':
-    multiprocessing.freeze_support()
-    sys.exit(main())

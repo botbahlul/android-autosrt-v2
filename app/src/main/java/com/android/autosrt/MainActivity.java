@@ -686,6 +686,13 @@ public class MainActivity extends AppCompatActivity {
             textview_fileURI.setVisibility(View.VISIBLE);
             textview_fileDisplayName.setVisibility(View.VISIBLE);
             textview_isTranscribing.setVisibility(View.VISIBLE);
+            if (FILE.PATH != null) {
+                String fp = "FILE.PATH = " + FILE.PATH;
+                textview_filePath.setText(fp);
+            }
+            else {
+                textview_filePath.setHint("FILE.PATH");
+            }
         }
         else {
             textview_src_code.setVisibility(View.GONE);
@@ -694,6 +701,13 @@ public class MainActivity extends AppCompatActivity {
             textview_fileURI.setVisibility(View.GONE);
             textview_fileDisplayName.setVisibility(View.GONE);
             textview_isTranscribing.setVisibility(View.GONE);
+            if (FILE.PATH != null) {
+                String fp = "File path = " + FILE.PATH;
+                textview_filePath.setText(fp);
+            }
+            else {
+                textview_filePath.setHint("File path");
+            }
         }
 
         checkbox_debug_mode.setOnClickListener(view -> {
@@ -704,6 +718,13 @@ public class MainActivity extends AppCompatActivity {
                 textview_fileURI.setVisibility(View.VISIBLE);
                 textview_fileDisplayName.setVisibility(View.VISIBLE);
                 textview_isTranscribing.setVisibility(View.VISIBLE);
+                if (FILE.PATH != null) {
+                    String fp = "FILE.PATH = " + FILE.PATH;
+                    textview_filePath.setText(fp);
+                }
+                else {
+                    textview_filePath.setHint("FILE.PATH");
+                }
             }
             else {
                 textview_src_code.setVisibility(View.GONE);
@@ -712,6 +733,13 @@ public class MainActivity extends AppCompatActivity {
                 textview_fileURI.setVisibility(View.GONE);
                 textview_fileDisplayName.setVisibility(View.GONE);
                 textview_isTranscribing.setVisibility(View.GONE);
+                if (FILE.PATH != null) {
+                    String fp = "File path = " + FILE.PATH;
+                    textview_filePath.setText(fp);
+                }
+                else {
+                    textview_filePath.setHint("File path");
+                }
             }
         });
 
@@ -938,12 +966,18 @@ public class MainActivity extends AppCompatActivity {
                         FILE.PATH = Uri2Path(getApplicationContext(), FILE.URI);
                         FILE.DISPLAY_NAME = queryName(getApplicationContext(), FILE.URI);
                         SUBTITLE.FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "." + SUBTITLE.FORMAT;
-                        SUBTITLE.TRANSLATED_FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "_translated." + SUBTITLE.FORMAT;
+                        SUBTITLE.TRANSLATED_FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + ".translated." + SUBTITLE.FORMAT;
                         runOnUiThread(() -> {
                             String t1 = "FILE.URI = " + FILE.URI;
                             textview_fileURI.setText(t1);
-                            String t2 = "FILE.PATH = " + FILE.PATH;
-                            textview_filePath.setText(t2);
+                            if(checkbox_debug_mode.isChecked()){
+                                String t2 = "FILE.PATH = " + FILE.PATH;
+                                textview_filePath.setText(t2);
+                            }
+                            else {
+                                String t2 = "File path = " + FILE.PATH;
+                                textview_filePath.setText(t2);
+                            }
                             String t3 = "FILE.DISPLAY_NAME = " + FILE.DISPLAY_NAME;
                             textview_fileDisplayName.setText(t3);
                         });

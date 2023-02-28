@@ -10,13 +10,11 @@
     android:orientation="vertical"
     android:padding="1dp"
     >
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         >
-
         <CheckBox
             android:id="@+id/checkbox_debug_mode"
             android:text="Debug mode"
@@ -33,7 +31,6 @@
             android:layout_marginBottom="0dp"
             android:checked="false"
             />
-
         <TextView
             android:id="@+id/textview_text1"
             android:text="Voice language"
@@ -49,7 +46,6 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="0dp"
             />
-
         <Spinner
             android:id="@+id/spinner_src_languages"
             android:hint="Voice languages"
@@ -68,14 +64,13 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="0dp"
             />
-
         <TextView
             android:id="@+id/textview_src_code"
             android:hint="LANGUAGE.SRC"
             android:padding="5dp"
-            android:gravity="start"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,7 +80,6 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <CheckBox
             android:id="@+id/checkbox_create_translation"
             android:text="Create Translation"
@@ -103,7 +97,6 @@
             android:layout_marginBottom="1dp"
             android:checked="true"
             />
-
         <TextView
             android:id="@+id/textview_text2"
             android:text="Translation language"
@@ -120,7 +113,6 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <Spinner
             android:id="@+id/spinner_dst_languages"
             android:hint="@string/translation_language_hints"
@@ -139,15 +131,14 @@
             android:layout_marginTop="1dp"
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
-        />
-
+            />
         <TextView
             android:id="@+id/textview_dst_code"
             android:hint="LANGUAGE.DST"
             android:padding="5dp"
             android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:visibility="visible"
             android:layout_width="match_parent"
@@ -158,7 +149,6 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <TextView
             android:id="@+id/textview_text3"
             android:text="Subtitle format"
@@ -174,7 +164,6 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <Spinner
             android:id="@+id/spinner_subtitle_format"
             android:hint="SUBTITLE.FORMAT"
@@ -193,14 +182,13 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <TextView
             android:id="@+id/textview_subtitle_format"
             android:hint="SUBTITLE.FORMAT"
             android:padding="5dp"
-            android:gravity="start"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -210,15 +198,14 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <TextView
             android:id="@+id/textview_fileURI"
             android:hint="@string/file_uri"
             android:minHeight="24dp"
             android:padding="5dp"
-            android:gravity="left"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -230,15 +217,14 @@
             android:layout_centerHorizontal="true"
             tools:ignore="RtlHardcoded"
             />
-
         <TextView
             android:id="@+id/textview_filepath"
             android:hint="@string/file_path"
             android:minHeight="24dp"
             android:padding="5dp"
-            android:gravity="left"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -250,15 +236,14 @@
             android:layout_centerHorizontal="true"
             tools:ignore="RtlHardcoded"
             />
-
         <TextView
             android:id="@+id/textview_fileDisplayName"
             android:hint="@string/file_display_name"
             android:minHeight="24dp"
             android:padding="5dp"
-            android:gravity="left"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -270,7 +255,6 @@
             android:layout_centerHorizontal="true"
             tools:ignore="RtlHardcoded"
             />
-
         <Button
             android:id="@+id/button_browse"
             android:text="@string/browse"
@@ -288,9 +272,13 @@
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
             />
-
         <Button
             android:id="@+id/button_start"
+            android:text="@string/start"
+            android:padding="5dp"
+            android:gravity="center"
+            android:textAlignment="gravity"
+            android:textSize="14sp"
             android:layout_width="160dp"
             android:layout_height="wrap_content"
             android:layout_below="@+id/button_browse"
@@ -299,19 +287,14 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="5dp"
             android:layout_marginBottom="1dp"
-            android:gravity="center"
-            android:padding="5dp"
-            android:text="@string/start"
-            android:textAlignment="gravity"
-            android:textSize="14sp" />
-
+            />
         <TextView
             android:id="@+id/textview_isTranscribing"
             android:hint="@string/transcribe_status"
             android:padding="5dp"
             android:gravity="center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:scrollbars="vertical"
             android:isScrollContainer="true"
             android:background="@android:drawable/editbox_background"
@@ -326,14 +309,13 @@
             android:layout_marginBottom="1dp"
             tools:ignore="RtlHardcoded,SmallSp"
             />
-
         <TextView
             android:id="@+id/textview_output_messages_1"
             android:hint="@string/output_messages"
             android:padding="5dp"
-            android:gravity="left"
+            android:gravity="start|center"
             android:textAlignment="gravity"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:scrollbars="vertical"
             android:isScrollContainer="true"
             android:background="@android:drawable/editbox_background"
@@ -348,6 +330,5 @@
             android:layout_marginBottom="1dp"
             tools:ignore="RtlHardcoded,SmallSp"
             />
-
     </RelativeLayout>
 </ScrollView>

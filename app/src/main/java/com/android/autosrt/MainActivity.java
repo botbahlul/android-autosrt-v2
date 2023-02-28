@@ -5,6 +5,7 @@ import static android.os.Build.VERSION.SDK_INT;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -1007,8 +1008,38 @@ public class MainActivity extends AppCompatActivity {
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent intent = result.getData();
-                        if (intent != null && intent.getClipData() != null) {
-                            for (int i = 0; i < intent.getClipData().getItemCount(); i++) {
+                        ClipData cd = null;
+                        if (intent != null) {
+                            cd = intent.getClipData();
+                        }
+                        if (cd == null) {
+                            Uri fileURI = intent.getData();
+                            FILE.URI_LIST.add(fileURI);
+                            String filePath = Uri2Path(getApplicationContext(), fileURI);
+                            FILE.PATH_LIST.add(filePath);
+                            String fileDisplayName = queryName(getApplicationContext(), fileURI);
+                            FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
+                            runOnUiThread(() -> {
+                                textview_fileURI.setText("");
+                                textview_filepath.setText("");
+                                textview_fileDisplayName.setText("");
+                                for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                                    String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
+                                    textview_fileURI.append(t1 + "\n");
+                                    if (checkbox_debug_mode.isChecked()) {
+                                        String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                    } else {
+                                        String t2 = FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                    }
+                                    String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
+                                    textview_fileDisplayName.append(t3 + "\n");
+                                }
+                            });
+                        }
+                        else if (intent != null && cd != null) {
+                            for (int i = 0; i < cd.getItemCount(); i++) {
                                 Uri fileURI = intent.getClipData().getItemAt(i).getUri();
                                 FILE.URI_LIST.add(fileURI);
                                 String filePath = Uri2Path(getApplicationContext(), fileURI);
@@ -1017,6 +1048,9 @@ public class MainActivity extends AppCompatActivity {
                                 FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
                             }
                             runOnUiThread(() -> {
+                                textview_fileURI.setText("");
+                                textview_filepath.setText("");
+                                textview_fileDisplayName.setText("");
                                 if (checkbox_debug_mode.isChecked()) {
                                     for (int i = 0; i < FILE.URI_LIST.size(); i++) {
                                         String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
@@ -1028,7 +1062,6 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 } else {
                                     for (int i = 0; i < FILE.URI_LIST.size(); i++) {
-                                        //String t2 = "File path [" + i + "] = " + FILE.PATH_LIST.get(i);
                                         String t2 = FILE.PATH_LIST.get(i);
                                         textview_filepath.append(t2 + "\n");
                                     }

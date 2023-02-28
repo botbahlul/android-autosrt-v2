@@ -13,4 +13,8 @@
     <string name="file_uri">FILE.URI</string>
     <string name="file_display_name">FILE.DISPLAY_NAME</string>
     <string name="file_path">FILE.PATH</string>
+    <string name="language_src_language">LANGUAGE.SRC_LANGUAGE</string>
+    <string name="language_dst_language">LANGUAGE.DST_LANGUAGE</string>
+    <string name="current_file_proceed">Current file proceed</string>
+    <string name="saved_subtitles">Saved subtitles</string>
 </resources>

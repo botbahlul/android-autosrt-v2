@@ -3,6 +3,9 @@ ANDROID APP to AUTO GENERATE SUBTITLE FILE and TRANSLATED SUBTITLE FILE for any 
 
 https://user-images.githubusercontent.com/88623122/216783365-b9743b8c-0c52-4c84-b856-cb9f0ad1cbd2.mp4
 
+UPDATE NOTES :
+SINCE VERSION 2.7.0 YOU CAN SELECT MULTIPLE FILES AT ONCE
+
 This app is ANDROID GUI VERSION of AUTOSRT PYHTON SCRIPT https://github.com/botbahlul/autosrt
 
 It's developed to running on ANDROID with the help of CHAQUOPY https://chaquo.com/chaquopy/

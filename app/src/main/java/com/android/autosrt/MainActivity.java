@@ -2,7 +2,6 @@ package com.android.autosrt;
 
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION.SDK_INT;
-import static android.text.TextUtils.substring;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -45,7 +44,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class MainActivity extends AppCompatActivity {
     ArrayList<String> arraylist_src_language_codes = new ArrayList<>();
     ArrayList<String> arraylist_dst_language_codes = new ArrayList<>();
@@ -72,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     TextView textview_subtitle_format;
 
     TextView textview_fileURI;
-    TextView textview_filePath;
+    TextView textview_filepath;
     TextView textview_fileDisplayName;
 
     Button button_browse;
@@ -81,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
     TextView textview_isTranscribing;
 
     @SuppressLint("StaticFieldLeak")
-    public static TextView textview_output;
+    public static TextView textview_output_messages_1;
 
     int STORAGE_PERMISSION_CODE = 101;
 
@@ -654,19 +652,31 @@ public class MainActivity extends AppCompatActivity {
         textview_subtitle_format = findViewById(R.id.textview_subtitle_format);
 
         textview_fileURI = findViewById(R.id.textview_fileURI);
-        textview_filePath = findViewById(R.id.textview_filePath);
+        textview_filepath = findViewById(R.id.textview_filepath);
         textview_fileDisplayName = findViewById(R.id.textview_fileDisplayName);
 
         button_browse = findViewById(R.id.button_browse);
         button_start = findViewById(R.id.button_start);
         textview_isTranscribing = findViewById(R.id.textview_isTranscribing);
-        textview_output = findViewById(R.id.textview_output);
+        textview_output_messages_1 = findViewById(R.id.textview_output_messages_1);
+
+        textview_fileURI.setTextIsSelectable(true);
+        textview_filepath.setTextIsSelectable(true);
+        textview_fileDisplayName.setTextIsSelectable(true);
+        textview_output_messages_1.setTextIsSelectable(true);
+
+        textview_fileURI.setSelected(true);
+        textview_filepath.setSelected(true);
+        textview_fileDisplayName.setSelected(true);
+        textview_output_messages_1.setSelected(true);
 
         spinner_src_languages.setFocusable(true);
         spinner_src_languages.requestFocus();
 
         textview_fileURI.setMovementMethod(new ScrollingMovementMethod());
-        textview_output.setMovementMethod(new ScrollingMovementMethod());
+        textview_filepath.setMovementMethod(new ScrollingMovementMethod());
+        textview_fileDisplayName.setMovementMethod(new ScrollingMovementMethod());
+        textview_output_messages_1.setMovementMethod(new ScrollingMovementMethod());
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
@@ -676,41 +686,15 @@ public class MainActivity extends AppCompatActivity {
         TRANSCRIBE_STATUS.IS_TRANSCRIBING = false;
         CANCEL_STATUS.IS_CANCELING = true;
 
-        String t1 = "TRANSCRIBE_STATUS.IS_TRANSCRIBING = " + TRANSCRIBE_STATUS.IS_TRANSCRIBING;
-        textview_isTranscribing.setText(t1);
-
-        if(checkbox_debug_mode.isChecked()){
-            textview_src_code.setVisibility(View.VISIBLE);
-            textview_dst_code.setVisibility(View.VISIBLE);
-            textview_subtitle_format.setVisibility(View.VISIBLE);
-            textview_fileURI.setVisibility(View.VISIBLE);
-            textview_fileDisplayName.setVisibility(View.VISIBLE);
-            textview_isTranscribing.setVisibility(View.VISIBLE);
-            if (FILE.PATH != null) {
-                String fp = "FILE.PATH = " + FILE.PATH;
-                textview_filePath.setText(fp);
-            }
-            else {
-                textview_filePath.setHint("FILE.PATH");
-            }
-        }
-        else {
-            textview_src_code.setVisibility(View.GONE);
-            textview_dst_code.setVisibility(View.GONE);
-            textview_subtitle_format.setVisibility(View.GONE);
-            textview_fileURI.setVisibility(View.GONE);
-            textview_fileDisplayName.setVisibility(View.GONE);
-            textview_isTranscribing.setVisibility(View.GONE);
-            if (FILE.PATH != null) {
-                String fp = "File path = " + FILE.PATH;
-                textview_filePath.setText(fp);
-            }
-            else {
-                textview_filePath.setHint("File path");
-            }
-        }
+        String t = "TRANSCRIBE_STATUS.IS_TRANSCRIBING = " + TRANSCRIBE_STATUS.IS_TRANSCRIBING;
+        runOnUiThread(() -> textview_isTranscribing.setText(t));
 
         checkbox_debug_mode.setOnClickListener(view -> {
+            runOnUiThread(() -> {
+                textview_fileURI.setText("");
+                textview_filepath.setText("");
+                textview_fileDisplayName.setText("");
+            });
             if(((CompoundButton) view).isChecked()){
                 textview_src_code.setVisibility(View.VISIBLE);
                 textview_dst_code.setVisibility(View.VISIBLE);
@@ -718,13 +702,21 @@ public class MainActivity extends AppCompatActivity {
                 textview_fileURI.setVisibility(View.VISIBLE);
                 textview_fileDisplayName.setVisibility(View.VISIBLE);
                 textview_isTranscribing.setVisibility(View.VISIBLE);
-                if (FILE.PATH != null) {
-                    String fp = "FILE.PATH = " + FILE.PATH;
-                    textview_filePath.setText(fp);
-                }
-                else {
-                    textview_filePath.setHint("FILE.PATH");
-                }
+                runOnUiThread(() -> {
+                    if (FILE.PATH_LIST != null) {
+                        for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                            String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
+                            textview_fileURI.append(t1 + "\n");
+                            String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
+                            textview_filepath.append(t2 + "\n");
+                            String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
+                            textview_fileDisplayName.append(t3 + "\n");
+                        }
+
+                    } else {
+                        textview_filepath.setHint("FILE.PATH_LIST");
+                    }
+                });
             }
             else {
                 textview_src_code.setVisibility(View.GONE);
@@ -733,15 +725,67 @@ public class MainActivity extends AppCompatActivity {
                 textview_fileURI.setVisibility(View.GONE);
                 textview_fileDisplayName.setVisibility(View.GONE);
                 textview_isTranscribing.setVisibility(View.GONE);
-                if (FILE.PATH != null) {
-                    String fp = "File path = " + FILE.PATH;
-                    textview_filePath.setText(fp);
-                }
-                else {
-                    textview_filePath.setHint("File path");
-                }
+                runOnUiThread(() -> {
+                    if (FILE.PATH_LIST != null) {
+                        for (int i=0; i< FILE.PATH_LIST.size(); i++) {
+                            //String fp = "File path [" + i + "] = " + FILE.PATH_LIST.get(i) + "\n";
+                            String fp = FILE.PATH_LIST.get(i) + "\n";
+                            textview_filepath.append(fp);
+                        }
+                    }
+                    else {
+                        textview_filepath.setHint("File path");
+                    }
+                });
             }
         });
+
+        if(checkbox_debug_mode.isChecked()){
+            textview_fileURI.setText("");
+            textview_filepath.setText("");
+            textview_fileDisplayName.setText("");
+            textview_src_code.setVisibility(View.VISIBLE);
+            textview_dst_code.setVisibility(View.VISIBLE);
+            textview_subtitle_format.setVisibility(View.VISIBLE);
+            textview_fileURI.setVisibility(View.VISIBLE);
+            textview_fileDisplayName.setVisibility(View.VISIBLE);
+            textview_isTranscribing.setVisibility(View.VISIBLE);
+            runOnUiThread(() -> {
+                if (FILE.PATH_LIST != null) {
+                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                        String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
+                        textview_fileURI.append(t1 + "\n");
+                        String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
+                        textview_filepath.append(t2 + "\n");
+                        String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
+                        textview_fileDisplayName.append(t3 + "\n");
+                    }
+                }
+                else {
+                    textview_filepath.setHint("FILE.PATH_LIST");
+                }
+            });
+        }
+        else {
+            textview_src_code.setVisibility(View.GONE);
+            textview_dst_code.setVisibility(View.GONE);
+            textview_subtitle_format.setVisibility(View.GONE);
+            textview_fileURI.setVisibility(View.GONE);
+            textview_fileDisplayName.setVisibility(View.GONE);
+            textview_isTranscribing.setVisibility(View.GONE);
+            runOnUiThread(() -> {
+                if (FILE.PATH_LIST != null) {
+                    for (int i=0; i< FILE.PATH_LIST.size(); i++) {
+                        //String fp = "File path [" + i + "] = " + FILE.PATH_LIST.get(i) + "\n";
+                        String fp = FILE.PATH_LIST.get(i) + "\n";
+                        textview_filepath.append(fp);
+                    }
+                }
+                else {
+                    textview_filepath.setHint("File path");
+                }
+            });
+        }
 
         spinner_src_languages.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -806,10 +850,12 @@ public class MainActivity extends AppCompatActivity {
                         LANGUAGE.DST_LANGUAGE = spinner_dst_languages.getSelectedItem().toString();
                         LANGUAGE.SRC_CODE = map_src_languages.get(LANGUAGE.SRC_LANGUAGE);
                         LANGUAGE.DST_CODE = map_dst_languages.get(LANGUAGE.DST_LANGUAGE);
-                        runOnUiThread(() -> {
-                            String ldst = "LANGUAGE.DST_CODE = " + LANGUAGE.DST_CODE;
-                            textview_dst_code.setText(ldst);
-                        });
+                        if (checkbox_debug_mode.isChecked()) {
+                            runOnUiThread(() -> {
+                                String ldst = "LANGUAGE.DST_CODE = " + LANGUAGE.DST_CODE;
+                                textview_dst_code.setText(ldst);
+                            });
+                        }
                     }
                     @Override
                     public void onNothingSelected(AdapterView<?> adapterView) {
@@ -817,13 +863,14 @@ public class MainActivity extends AppCompatActivity {
                         LANGUAGE.DST_LANGUAGE = spinner_dst_languages.getSelectedItem().toString();
                         LANGUAGE.SRC_CODE = map_src_languages.get(LANGUAGE.SRC_LANGUAGE);
                         LANGUAGE.DST_CODE = map_dst_languages.get(LANGUAGE.DST_LANGUAGE);
-                        runOnUiThread(() -> {
-                            String ldst = "LANGUAGE.DST_CODE = " + LANGUAGE.DST_CODE;
-                            textview_dst_code.setText(ldst);
-                        });
+                        if (checkbox_debug_mode.isChecked()) {
+                            runOnUiThread(() -> {
+                                String ldst = "LANGUAGE.DST_CODE = " + LANGUAGE.DST_CODE;
+                                textview_dst_code.setText(ldst);
+                            });
+                        }
                     }
                 });
-
             }
             else {
                 textview_text2.setVisibility(View.GONE);
@@ -835,18 +882,6 @@ public class MainActivity extends AppCompatActivity {
                 LANGUAGE.DST_CODE = map_dst_languages.get(LANGUAGE.DST_LANGUAGE);
             }
         });
-
-        /*if (checkbox_create_translation.isChecked()) {
-            textview_text2.setVisibility(View.VISIBLE);
-            spinner_dst_languages.setVisibility(View.VISIBLE);
-            textview_dst_code.setVisibility(View.VISIBLE);
-        }
-        else if (!checkbox_create_translation.isChecked()) {
-            textview_text2.setVisibility(View.GONE);
-            spinner_dst_languages.setVisibility(View.GONE);
-            textview_dst_code.setVisibility(View.GONE);
-            LANGUAGE.DST_CODE = LANGUAGE.SRC_CODE;
-        }*/
 
         spinner_subtitle_format.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -869,20 +904,33 @@ public class MainActivity extends AppCompatActivity {
         });
 
         button_browse.setOnClickListener(view -> {
-            textview_output.setText("");
+            textview_output_messages_1.setText("");
+            textview_filepath.setText("");
+            FILE.URI_LIST = null;
+            FILE.URI_LIST = new ArrayList<>();
+            FILE.PATH_LIST = null;
+            FILE.PATH_LIST = new ArrayList<>();
+            FILE.DISPLAY_NAME_LIST = null;
+            FILE.DISPLAY_NAME_LIST = new ArrayList<>();
+            SUBTITLE.FILE_PATH_LIST = null;
+            SUBTITLE.FILE_PATH_LIST = new ArrayList<>();
+            SUBTITLE.TRANSLATED_FILE_PATH_LIST = null;
+            SUBTITLE.TRANSLATED_FILE_PATH_LIST = new ArrayList<>();
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            //String[] mimeTypes = {"video/*", "audio/*"};
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            String[] mimeTypes = {"video/*", "audio/*"};
             intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
             mStartForActivity.launch(intent);
         });
 
         button_start.setOnClickListener(view -> {
-            if (FILE.URI != null) {
+            if (FILE.URI_LIST != null) {
                 TRANSCRIBE_STATUS.IS_TRANSCRIBING = true;
                 CANCEL_STATUS.IS_CANCELING = false;
                 String it = "TRANSCRIBE_STATUS.IS_TRANSCRIBING = " + TRANSCRIBE_STATUS.IS_TRANSCRIBING;
-                textview_isTranscribing.setText(it);
+                runOnUiThread(() -> textview_isTranscribing.setText(it));
                 Intent intent = new Intent(MainActivity.this, TranscribeActivity.class);
                 MainActivity.this.startActivity(intent);
             }
@@ -890,8 +938,8 @@ public class MainActivity extends AppCompatActivity {
                 TRANSCRIBE_STATUS.IS_TRANSCRIBING = false;
                 CANCEL_STATUS.IS_CANCELING = true;
                 runOnUiThread(() -> {
-                    String m = "You should browse a file first\n";
-                    textview_output.setText(m);
+                    String m = "Please select at least 1 video/audio file\n";
+                    textview_output_messages_1.setText(m);
                 });
             }
         });
@@ -912,11 +960,11 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 //Toast.makeText(MainActivity.this, "Storage Permission Granted", Toast.LENGTH_SHORT).show();
                 String m = "Storage permission granted";
-                textview_output.setText(m);
+                runOnUiThread(() -> textview_output_messages_1.setText(m));
             } else {
                 //Toast.makeText(MainActivity.this, "Storage Permission Denied", Toast.LENGTH_SHORT).show();
                 String m = "Storage permission denied";
-                textview_output.setText(m);
+                runOnUiThread(() -> textview_output_messages_1.setText(m));
             }
         }
     }
@@ -951,7 +999,6 @@ public class MainActivity extends AppCompatActivity {
         spinner_subtitle_format.setSelection(supported_formats.indexOf("srt"));
     }
 
-
     ActivityResultLauncher<Intent> mStartForActivity = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
@@ -960,27 +1007,40 @@ public class MainActivity extends AppCompatActivity {
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent intent = result.getData();
-                        if (intent != null) {
-                            FILE.URI = intent.getData();
+                        if (intent != null && intent.getClipData() != null) {
+                            for (int i = 0; i < intent.getClipData().getItemCount(); i++) {
+                                Uri fileURI = intent.getClipData().getItemAt(i).getUri();
+                                FILE.URI_LIST.add(fileURI);
+                                String filePath = Uri2Path(getApplicationContext(), fileURI);
+                                FILE.PATH_LIST.add(filePath);
+                                String fileDisplayName = queryName(getApplicationContext(), fileURI);
+                                FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
+                            }
+                            runOnUiThread(() -> {
+                                if (checkbox_debug_mode.isChecked()) {
+                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                                        String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
+                                        textview_fileURI.append(t1 + "\n");
+                                        String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                        String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
+                                        textview_fileDisplayName.append(t3 + "\n");
+                                    }
+                                } else {
+                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                                        //String t2 = "File path [" + i + "] = " + FILE.PATH_LIST.get(i);
+                                        String t2 = FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                    }
+                                }
+                            });
                         }
-                        FILE.PATH = Uri2Path(getApplicationContext(), FILE.URI);
-                        FILE.DISPLAY_NAME = queryName(getApplicationContext(), FILE.URI);
-                        SUBTITLE.FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + "." + SUBTITLE.FORMAT;
-                        SUBTITLE.TRANSLATED_FILE_PATH = substring(FILE.PATH,0,FILE.PATH.length()-4) + ".translated." + SUBTITLE.FORMAT;
-                        runOnUiThread(() -> {
-                            String t1 = "FILE.URI = " + FILE.URI;
-                            textview_fileURI.setText(t1);
-                            if(checkbox_debug_mode.isChecked()){
-                                String t2 = "FILE.PATH = " + FILE.PATH;
-                                textview_filePath.setText(t2);
-                            }
-                            else {
-                                String t2 = "File path = " + FILE.PATH;
-                                textview_filePath.setText(t2);
-                            }
-                            String t3 = "FILE.DISPLAY_NAME = " + FILE.DISPLAY_NAME;
-                            textview_fileDisplayName.setText(t3);
-                        });
+                        else {
+                            runOnUiThread(() -> {
+                                String msg = "Please select at least 1 video/audio file";
+                                textview_output_messages_1.setText(msg);
+                            });
+                        }
                     }
                 }
             });
@@ -1012,7 +1072,6 @@ public class MainActivity extends AppCompatActivity {
             if(authority.startsWith("com.android.externalstorage")) {
                 String docId = DocumentsContract.getDocumentId(uri);
                 String[] split = docId.split(":");
-                //String type = split[0];
                 String fullPath = getPathFromExtSD(split);
                 if (!fullPath.equals("")) {
                     System.out.println("fullPath = " + fullPath);
@@ -1054,7 +1113,6 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-
     private String getPathFromExtSD(String[] pathData) {
         final String type = pathData[0];
         final String relativePath = File.separator + pathData[1];
@@ -1082,60 +1140,5 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(filePath);
         return file.exists();
     }
-
-    /*private void writeTextFileToDownloadDir(String fileName) {
-        OutputStream outputStream;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName); // file name required to contain extestion file mime
-            values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS+"/DIRECTORY_NAME"); //DIRECTORY
-            Uri extVolumeUri = MediaStore.Files.getContentUri("external");
-            Uri fileUri = getApplicationContext().getContentResolver().insert(extVolumeUri, values);
-            try {
-                outputStream = getApplicationContext().getContentResolver().openOutputStream(fileUri);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else {
-            File root = new File(Environment.getExternalStorageDirectory()+File.separator+"DIRECTORY_NAME", "images");
-            File file = new File(root, fileName );
-            Log.d(TAG, "saveFile: file path - " + file.getAbsolutePath());
-            try {
-                outputStream = new FileOutputStream(file);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        Uri uri = Uri.fromFile(new File(SUBTITLE.TRANSLATED_FILE_PATH));
-        InputStream inputStream;
-        try {
-            inputStream = getApplicationContext().getContentResolver().openInputStream(uri);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        //byte[] bytes = bodyData.getBytes();
-        byte[] bytes = new byte[1024];
-        int length;
-        while (true) {
-            try {
-                if (!((length = inputStream.read(bytes)) > 0)) break;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                outputStream.write(bytes, 0, length);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        try {
-            outputStream.close();
-            inputStream.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
 
 }

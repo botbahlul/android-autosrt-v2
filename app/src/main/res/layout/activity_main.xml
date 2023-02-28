@@ -232,7 +232,7 @@
             />
 
         <TextView
-            android:id="@+id/textview_filePath"
+            android:id="@+id/textview_filepath"
             android:hint="@string/file_path"
             android:minHeight="24dp"
             android:padding="5dp"
@@ -262,7 +262,7 @@
             android:background="@android:drawable/editbox_background"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/textview_filePath"
+            android:layout_below="@+id/textview_filepath"
             android:layout_marginStart="5dp"
             android:layout_marginTop="1dp"
             android:layout_marginEnd="5dp"
@@ -328,12 +328,12 @@
             />
 
         <TextView
-            android:id="@+id/textview_output"
+            android:id="@+id/textview_output_messages_1"
             android:hint="@string/output_messages"
             android:padding="5dp"
             android:gravity="left"
             android:textAlignment="gravity"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:scrollbars="vertical"
             android:isScrollContainer="true"
             android:background="@android:drawable/editbox_background"

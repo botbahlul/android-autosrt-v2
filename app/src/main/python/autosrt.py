@@ -654,9 +654,9 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 return
 
             extracted_regions.append(extracted_region)
-            pBar(i, len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
+            pBar(i, len(regions), "Converting speech regions to FLAC : ", activity, textview_debug)
         time.sleep(1)
-        pBar(len(regions), len(regions), "Converting speech regions to FLAC: ", activity, textview_debug)
+        pBar(len(regions), len(regions), "Converting speech regions to FLAC : ", activity, textview_debug)
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
@@ -671,7 +671,7 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
             return
 
         time.sleep(2)
-        print("Creating transcriptions")
+        print("Creating subtitles")
         for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
 
             if os.path.isfile(cancel_file):
@@ -687,9 +687,9 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 return
 
             transcriptions.append(transcription)
-            pBar(i, len(regions), "Creating transcriptions: ", activity, textview_debug)
+            pBar(i, len(regions), "Creating subtitles : ", activity, textview_debug)
         time.sleep(1)
-        pBar(len(regions), len(regions), "Creating transcriptions: ", activity, textview_debug)
+        pBar(len(regions), len(regions), "Creating subtitles : ", activity, textview_debug)
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
@@ -750,11 +750,17 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
 
             translated_subtitle_file = subtitle_file[ :-4] + '.translated.' + subtitle_format
 
+            created_regions = []
+            created_subtitles = []
+            for entry in timed_subtitles:
+                created_regions.append(entry[0])
+                created_subtitles.append(entry[1])
+
             transcription_translator = TranscriptionTranslator(src=src, dest=dest)
             translated_transcriptions = []
             time.sleep(2)
-            print("Translating transcriptions")
-            for i, translated_transcription in enumerate(pool.imap(transcription_translator, transcriptions)):
+            print("Translating subtitles")
+            for i, translated_transcription in enumerate(pool.imap(transcription_translator, created_subtitles)):
 
                 if os.path.isfile(cancel_file):
                     os.remove(cancel_file)
@@ -769,9 +775,9 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                     return
 
                 translated_transcriptions.append(translated_transcription)
-                pBar(i, len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+                pBar(i, len(transcriptions), "Translating subtitles from %s to %s : " %(src, dest), activity, textview_debug)
             time.sleep(1)
-            pBar(len(transcriptions), len(transcriptions), "Translating from %s to %s: " %(src, dest), activity, textview_debug)
+            pBar(len(transcriptions), len(transcriptions), "Translating subtitles from %s to %s : " %(src, dest), activity, textview_debug)
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
@@ -785,7 +791,7 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 activity.runOnUiThread(R())
                 return
 
-            timed_translated_subtitles = [(r, t) for r, t in zip(regions, translated_transcriptions) if t]
+            timed_translated_subtitles = [(r, t) for r, t in zip(created_regions, translated_transcriptions) if t]
             formatter = FORMATTERS.get(subtitle_format)
             formatted_translated_subtitles = formatter(timed_translated_subtitles)
 

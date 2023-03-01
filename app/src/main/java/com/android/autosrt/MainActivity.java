@@ -1163,7 +1163,7 @@ public class MainActivity extends AppCompatActivity {
         }
         // CHECK SECONDARY STORAGE
         else {
-            fullPath = "/storage/" + type + File.separator + relativePath;
+            fullPath = "/storage/" + type + relativePath;
             if (fileExists(fullPath)) {
                 return fullPath;
             }

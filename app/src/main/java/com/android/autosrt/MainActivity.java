@@ -1,8 +1,6 @@
 package com.android.autosrt;
 
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static android.os.Build.VERSION.SDK_INT;
-
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
@@ -945,12 +943,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (SDK_INT >= Build.VERSION_CODES.Q && Environment.isExternalStorageRemovable()) {
-            Uri uri = Uri.parse("package:" + MainActivity.this.getPackageName());
-            startActivity(new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, uri));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            }
         } else {
-            checkPermission(WRITE_EXTERNAL_STORAGE, STORAGE_PERMISSION_CODE);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            }
         }
+
 
     }
 
@@ -970,11 +982,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void checkPermission(String permission, int requestCode) {
+    /*public void checkPermission(String permission, int requestCode) {
         if (ContextCompat.checkSelfPermission(MainActivity.this, permission) == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[] { permission }, requestCode);
         }
-    }
+    }*/
 
     public void setup_src_spinner(ArrayList<String> supported_languages) {
         Collections.sort(supported_languages);
@@ -1008,11 +1020,41 @@ public class MainActivity extends AppCompatActivity {
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent intent = result.getData();
-                        ClipData cd = null;
-                        if (intent != null) {
+                        ClipData cd;
+                        if (intent != null && intent.getClipData() != null) {
                             cd = intent.getClipData();
+                            for (int i = 0; i < cd.getItemCount(); i++) {
+                                Uri fileURI = cd.getItemAt(i).getUri();
+                                FILE.URI_LIST.add(fileURI);
+                                String filePath = Uri2Path(getApplicationContext(), fileURI);
+                                FILE.PATH_LIST.add(filePath);
+                                String fileDisplayName = queryName(getApplicationContext(), fileURI);
+                                //String fileDisplayName = uri.getLastPathSegment();
+                                //String filename = FilenameUtils.getName(subtitleFilePath);
+                                FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
+                            }
+                            runOnUiThread(() -> {
+                                textview_fileURI.setText("");
+                                textview_filepath.setText("");
+                                textview_fileDisplayName.setText("");
+                                if (checkbox_debug_mode.isChecked()) {
+                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                                        String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
+                                        textview_fileURI.append(t1 + "\n");
+                                        String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                        String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
+                                        textview_fileDisplayName.append(t3 + "\n");
+                                    }
+                                } else {
+                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
+                                        String t2 = FILE.PATH_LIST.get(i);
+                                        textview_filepath.append(t2 + "\n");
+                                    }
+                                }
+                            });
                         }
-                        if (cd == null) {
+                        else if (intent != null && intent.getClipData() == null) {
                             Uri fileURI = intent.getData();
                             FILE.URI_LIST.add(fileURI);
                             String filePath = Uri2Path(getApplicationContext(), fileURI);
@@ -1035,36 +1077,6 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                     String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
                                     textview_fileDisplayName.append(t3 + "\n");
-                                }
-                            });
-                        }
-                        else if (intent != null && cd != null) {
-                            for (int i = 0; i < cd.getItemCount(); i++) {
-                                Uri fileURI = intent.getClipData().getItemAt(i).getUri();
-                                FILE.URI_LIST.add(fileURI);
-                                String filePath = Uri2Path(getApplicationContext(), fileURI);
-                                FILE.PATH_LIST.add(filePath);
-                                String fileDisplayName = queryName(getApplicationContext(), fileURI);
-                                FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
-                            }
-                            runOnUiThread(() -> {
-                                textview_fileURI.setText("");
-                                textview_filepath.setText("");
-                                textview_fileDisplayName.setText("");
-                                if (checkbox_debug_mode.isChecked()) {
-                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
-                                        String t1 = "FILE.URI_LIST.get(" + i + ") = " + FILE.URI_LIST.get(i);
-                                        textview_fileURI.append(t1 + "\n");
-                                        String t2 = "FILE.PATH_LIST.get(" + i + ") = " + FILE.PATH_LIST.get(i);
-                                        textview_filepath.append(t2 + "\n");
-                                        String t3 = "FILE.DISPLAY_NAME_LIST.get(" + i + ") = " + FILE.DISPLAY_NAME_LIST.get(i);
-                                        textview_fileDisplayName.append(t3 + "\n");
-                                    }
-                                } else {
-                                    for (int i = 0; i < FILE.URI_LIST.size(); i++) {
-                                        String t2 = FILE.PATH_LIST.get(i);
-                                        textview_filepath.append(t2 + "\n");
-                                    }
                                 }
                             });
                         }

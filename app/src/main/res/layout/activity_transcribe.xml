@@ -113,7 +113,7 @@
             android:padding="5dp"
             android:gravity="start"
             android:textAlignment="gravity"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:scrollbars="vertical"
             android:isScrollContainer="true"
             android:background="@android:drawable/editbox_background"

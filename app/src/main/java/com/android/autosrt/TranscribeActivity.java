@@ -3,9 +3,14 @@ package com.android.autosrt;
 import static android.os.Environment.DIRECTORY_DOCUMENTS;
 import static android.os.Environment.getExternalStorageDirectory;
 
+import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_CANCEL;
+import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
+import static java.lang.Math.round;
+
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ContentValues;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,6 +27,8 @@ import android.widget.TextView;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.arthenica.mobileffmpeg.Config;
+import com.arthenica.mobileffmpeg.FFmpeg;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
@@ -36,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TranscribeActivity extends AppCompatActivity {
 
@@ -168,19 +176,42 @@ public class TranscribeActivity extends AppCompatActivity {
                     if (FILE.PATH_LIST != null) {
                         if (!CANCEL_STATUS.IS_CANCELING) {
                             runOnUiThread(() -> textview_final_results.setText(""));
+
+                            File wavDir = getApplicationContext().getCacheDir();
+                            File[] tmpWavFile = new File[FILE.URI_LIST.size()];
+                            int[] wavFileSize = new int[FILE.URI_LIST.size()];
+
                             for (int i = 0; i < FILE.PATH_LIST.size(); i++) {
                                 String cfp = "Processing file : " + FILE.DISPLAY_NAME_LIST.get(i);
                                 runOnUiThread(() -> textview_current_file.setText(cfp));
-                                pyObjectSubtitleFile = py.getModule("autosrt").callAttr(
-                                        "transcribe",
-                                        LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE, FILE.PATH_LIST.get(i), FILE.DISPLAY_NAME_LIST.get(i), SUBTITLE.FORMAT, TranscribeActivity.this, textview_output_messages_2);
-                                if (pyObjectSubtitleFile != null) {
-                                    String subtitleFile = pyObjectSubtitleFile.toString();
-                                    SUBTITLE.FILE_PATH_LIST.add(subtitleFile);
-                                    String translatedSubtitleFile = StringUtils.substring(subtitleFile, 0, subtitleFile.length() - 4) + ".translated." + SUBTITLE.FORMAT;
-                                    SUBTITLE.TRANSLATED_FILE_PATH_LIST.add(translatedSubtitleFile);
-                                    saveSubtitleFileToDocumentsDir(FILE.DISPLAY_NAME_LIST.get(i), subtitleFile);
+
+                                tmpWavFile[i] = null;
+                                try {
+                                    tmpWavFile[i] = File.createTempFile("temp", ".wav", wavDir);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
                                 }
+
+                                wavFileSize[i] = 0;
+                                int channels = 1;
+                                int rate = 16000;
+                                Config.enableRedirection();
+                                wavFileSize[i] = convertToWav(FILE.PATH_LIST.get(i), tmpWavFile[i], channels, rate);
+                                Config.disableRedirection();
+
+                                if (wavFileSize[i] != 0) {
+                                    pyObjectSubtitleFile = py.getModule("autosrt").callAttr(
+                                            "transcribe",
+                                            LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE, FILE.PATH_LIST.get(i), FILE.DISPLAY_NAME_LIST.get(i), tmpWavFile[i].toString(), SUBTITLE.FORMAT, TranscribeActivity.this, textview_output_messages_2);
+                                    if (pyObjectSubtitleFile != null) {
+                                        String subtitleFile = pyObjectSubtitleFile.toString();
+                                        SUBTITLE.FILE_PATH_LIST.add(subtitleFile);
+                                        String translatedSubtitleFile = StringUtils.substring(subtitleFile, 0, subtitleFile.length() - 4) + ".translated." + SUBTITLE.FORMAT;
+                                        SUBTITLE.TRANSLATED_FILE_PATH_LIST.add(translatedSubtitleFile);
+                                        saveSubtitleFileToDocumentsDir(FILE.DISPLAY_NAME_LIST.get(i), subtitleFile);
+                                    }
+                                }
+
                             }
                             textview_final_results.setGravity(Gravity.BOTTOM);
 
@@ -447,4 +478,45 @@ public class TranscribeActivity extends AppCompatActivity {
             runOnUiThread(() -> textview_final_results.append(tsf));
         }
     }
+
+    private int convertToWav(String filePath, File tmpWavFile, int channels, int rate) {
+        AtomicReference<Float> progress = new AtomicReference<>((float) 0);
+        Uri fileURI = Uri.fromFile(new File(filePath));
+        int videoLength = MediaPlayer.create(getApplicationContext(), fileURI).getDuration();
+
+        Config.resetStatistics();
+        Config.enableStatisticsCallback(newStatistics -> {
+            progress.set(Float.parseFloat(String.valueOf(newStatistics.getTime())) / videoLength);
+            int progressFinal = (int) (progress.get() * 100);
+            Log.d(Config.TAG, "Video Length: " + progressFinal);
+            Log.d(Config.TAG, String.format("frame: %d, time: %d", newStatistics.getVideoFrameNumber(), newStatistics.getTime()));
+            Log.d(Config.TAG, String.format("Quality: %f, time: %f", newStatistics.getVideoQuality(), newStatistics.getVideoFps()));
+            runOnUiThread(() -> pBar(100*progress.get(), 100, "Converting to temporary WAV file : "));
+        });
+
+        String command = " -y -i " + "\"" + filePath + "\"" + " -ac " + channels + " -ar " + rate + " " + "\"" + tmpWavFile + "\"";
+        int returnCode = FFmpeg.execute(command);
+        if (returnCode == RETURN_CODE_SUCCESS) {
+            Log.i(Config.TAG, "Command execution completed successfully.");
+        } else if (returnCode == RETURN_CODE_CANCEL) {
+            Log.i(Config.TAG, "Async command execution cancelled by user.");
+        } else {
+            Log.i(Config.TAG, String.format("Command execution failed with rc=%d.", returnCode));
+        }
+        return Integer.parseInt(String.valueOf(tmpWavFile.length()));
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void pBar(float counter, float total, String prefix) {
+        int bar_length = 10;
+        int rounded = round(bar_length * counter/(float)total);
+        int filled_up_Length = (int)(rounded);
+        int percentage = round(100 * counter/(float)total);
+        String pounds = StringUtils.repeat('█', filled_up_Length);
+        String equals = StringUtils.repeat('-', (bar_length - filled_up_Length));
+        String bar = pounds + equals;
+        runOnUiThread(() -> textview_output_messages_2.setText(prefix + " |" + bar + "| " + percentage + '%'));
+    }
+
+
 }

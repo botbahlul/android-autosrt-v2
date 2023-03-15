@@ -358,7 +358,7 @@ public class TranscribeActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
             ContentValues values = new ContentValues();
             values.put(MediaStore.MediaColumns.DISPLAY_NAME, subtitleFileDisplayName); // file name subtitleFileDisplayName required to contain extension file mime
-            values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+            values.put(MediaStore.MediaColumns.MIME_TYPE, "*/*");
             values.put(MediaStore.MediaColumns.RELATIVE_PATH, DIRECTORY_DOCUMENTS + File.separator + getPackageName() + File.separator + subtitleFolder);
             Uri extVolumeUri = MediaStore.Files.getContentUri("external");
             Uri fileUri = getApplicationContext().getContentResolver().insert(extVolumeUri, values);
@@ -416,7 +416,7 @@ public class TranscribeActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.MediaColumns.DISPLAY_NAME, translatedSubtitleFileDisplayName); // file name avedTanslatedsubtitleFilePath required to contain extension file mime
-                values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+                values.put(MediaStore.MediaColumns.MIME_TYPE, "*/*");
                 values.put(MediaStore.MediaColumns.RELATIVE_PATH, DIRECTORY_DOCUMENTS + File.separator + getPackageName() + File.separator + subtitleFolder);
                 Uri extVolumeUri = MediaStore.Files.getContentUri("external");
                 Uri fileUri = getApplicationContext().getContentResolver().insert(extVolumeUri, values);

@@ -4,7 +4,7 @@ import audioop
 import math
 import multiprocessing
 import threading
-import io, sys, os, time, signal
+import io, sys, os, time, signal, shutil
 import tempfile
 import wave
 import json
@@ -21,8 +21,12 @@ from com.arthenica.mobileffmpeg import FFmpeg
 from os.path import dirname, join
 from com.chaquo.python import Python
 
-from java import dynamic_proxy, static_proxy
+from java import dynamic_proxy, static_proxy, jvoid, Override, method, constructor
 from java.lang import Runnable
+from android.os import Bundle
+from com.android.autosrt import R
+from androidx.appcompat.widget import AppCompatTextView
+from androidx.appcompat.app import AppCompatActivity
 
 context = Python.getPlatform().getApplication()
 files_dir = str(context.getExternalFilesDir(None))
@@ -32,18 +36,17 @@ transcriptions_file = join(cache_dir, "transcriptions.txt")
 region_start_file = join(cache_dir, 'region_starts.txt')
 elapsed_time_file = join(cache_dir, 'elapsed_time.txt')
 wav_filename = None
+subtitle_file = None
+translated_subtitle_file = None
 converter = None
 recognizer = None
 extracted_regions = None
 transcription = None
-subtitle_file = None
-translated_subtitle_file = None
 subtitle_folder_name = None
 pool = None
 
 GOOGLE_SPEECH_API_KEY = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
 GOOGLE_SPEECH_API_URL = "http://www.google.com/speech-api/v2/recognize?client=chromium&lang={lang}&key={key}" # pylint: disable=line-too-long
-DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0 Win64 x64)'
 
 arraylist_language_code = []
 arraylist_language_code.append("af")
@@ -67,12 +70,12 @@ arraylist_language_code.append("ny")
 arraylist_language_code.append("zh-CN")
 arraylist_language_code.append("zh-TW")
 arraylist_language_code.append("co")
-arraylist_language_code.append("hr")
+arraylist_language_code.append("cr")
 arraylist_language_code.append("cs")
 arraylist_language_code.append("da")
 arraylist_language_code.append("dv")
-arraylist_language_code.append("doi")
 arraylist_language_code.append("nl")
+arraylist_language_code.append("doi")
 arraylist_language_code.append("en")
 arraylist_language_code.append("eo")
 arraylist_language_code.append("et")
@@ -106,7 +109,7 @@ arraylist_language_code.append("kn")
 arraylist_language_code.append("kk")
 arraylist_language_code.append("km")
 arraylist_language_code.append("rw")
-arraylist_language_code.append("gom")
+arraylist_language_code.append("kok")
 arraylist_language_code.append("ko")
 arraylist_language_code.append("kri")
 arraylist_language_code.append("kmr")
@@ -126,7 +129,7 @@ arraylist_language_code.append("ml")
 arraylist_language_code.append("mt")
 arraylist_language_code.append("mi")
 arraylist_language_code.append("mr")
-arraylist_language_code.append("mni-Mtei")
+arraylist_language_code.append("mni")
 arraylist_language_code.append("lus")
 arraylist_language_code.append("mn")
 arraylist_language_code.append("my")
@@ -168,9 +171,9 @@ arraylist_language_code.append("ts")
 arraylist_language_code.append("tr")
 arraylist_language_code.append("tk")
 arraylist_language_code.append("tw")
+arraylist_language_code.append("ug")
 arraylist_language_code.append("uk")
 arraylist_language_code.append("ur")
-arraylist_language_code.append("ug")
 arraylist_language_code.append("uz")
 arraylist_language_code.append("vi")
 arraylist_language_code.append("cy")
@@ -180,143 +183,144 @@ arraylist_language_code.append("yo")
 arraylist_language_code.append("zu")
 
 arraylist_language = []
-arraylist_language.append("Afrikaans");
-arraylist_language.append("Albanian");
-arraylist_language.append("Amharic");
-arraylist_language.append("Arabic");
-arraylist_language.append("Armenian");
-arraylist_language.append("Assamese");
-arraylist_language.append("Aymara");
-arraylist_language.append("Azerbaijani");
-arraylist_language.append("Bambara");
-arraylist_language.append("Basque");
-arraylist_language.append("Belarusian");
-arraylist_language.append("Bengali");
-arraylist_language.append("Bhojpuri");
-arraylist_language.append("Bosnian");
-arraylist_language.append("Bulgarian");
-arraylist_language.append("Catalan");
-arraylist_language.append("Cebuano");
-arraylist_language.append("Chichewa");
-arraylist_language.append("Chinese (Simplified)");
-arraylist_language.append("Chinese (Traditional)");
-arraylist_language.append("Corsican");
-arraylist_language.append("Croatian");
-arraylist_language.append("Czech");
-arraylist_language.append("Danish");
-arraylist_language.append("Dhivehi");
-arraylist_language.append("Dogri");
-arraylist_language.append("Dutch");
-arraylist_language.append("English");
-arraylist_language.append("Esperanto");
-arraylist_language.append("Estonian");
-arraylist_language.append("Ewe");
-arraylist_language.append("Filipino");
-arraylist_language.append("Finnish");
-arraylist_language.append("French");
-arraylist_language.append("Frisian");
-arraylist_language.append("Galician");
-arraylist_language.append("Georgian");
-arraylist_language.append("German");
-arraylist_language.append("Greek");
-arraylist_language.append("Guarani");
-arraylist_language.append("Gujarati");
-arraylist_language.append("Haitian Creole");
-arraylist_language.append("Hausa");
-arraylist_language.append("Hawaiian");
-arraylist_language.append("Hebrew");
-arraylist_language.append("Hindi");
-arraylist_language.append("Hmong");
-arraylist_language.append("Hungarian");
-arraylist_language.append("Icelandic");
-arraylist_language.append("Igbo");
-arraylist_language.append("Ilocano");
-arraylist_language.append("Indonesian");
-arraylist_language.append("Irish");
-arraylist_language.append("Italian");
-arraylist_language.append("Japanese");
-arraylist_language.append("Javanese");
-arraylist_language.append("Kannada");
-arraylist_language.append("Kazakh");
-arraylist_language.append("Khmer");
-arraylist_language.append("Kinyarwanda");
-arraylist_language.append("Konkani");
-arraylist_language.append("Korean");
-arraylist_language.append("Krio");
-arraylist_language.append("Kurdish (Kurmanji)");
-arraylist_language.append("Kurdish (Sorani)");
-arraylist_language.append("Kyrgyz");
-arraylist_language.append("Lao");
-arraylist_language.append("Latin");
-arraylist_language.append("Latvian");
-arraylist_language.append("Lingala");
-arraylist_language.append("Lithuanian");
-arraylist_language.append("Luganda");
-arraylist_language.append("Luxembourgish");
-arraylist_language.append("Macedonian");
-arraylist_language.append("Malagasy");
-arraylist_language.append("Malay");
-arraylist_language.append("Malayalam");
-arraylist_language.append("Maltese");
-arraylist_language.append("Maori");
-arraylist_language.append("Marathi");
-arraylist_language.append("Meiteilon (Manipuri)");
-arraylist_language.append("Mizo");
-arraylist_language.append("Mongolian");
-arraylist_language.append("Myanmar (Burmese)");
-arraylist_language.append("Nepali");
-arraylist_language.append("Norwegian");
-arraylist_language.append("Odiya (Oriya)");
-arraylist_language.append("Oromo");
-arraylist_language.append("Pashto");
-arraylist_language.append("Persian");
-arraylist_language.append("Polish");
-arraylist_language.append("Portuguese");
-arraylist_language.append("Punjabi");
-arraylist_language.append("Quechua");
-arraylist_language.append("Romanian");
-arraylist_language.append("Russian");
-arraylist_language.append("Samoan");
-arraylist_language.append("Sanskrit");
-arraylist_language.append("Scots Gaelic");
-arraylist_language.append("Sepedi");
-arraylist_language.append("Serbian");
-arraylist_language.append("Sesotho");
-arraylist_language.append("Shona");
-arraylist_language.append("Sindhi");
-arraylist_language.append("Sinhala");
-arraylist_language.append("Slovak");
-arraylist_language.append("Slovenian");
-arraylist_language.append("Somali");
-arraylist_language.append("Spanish");
-arraylist_language.append("Sundanese");
-arraylist_language.append("Swahili");
-arraylist_language.append("Swedish");
-arraylist_language.append("Tajik");
-arraylist_language.append("Tamil");
-arraylist_language.append("Tatar");
-arraylist_language.append("Telugu");
-arraylist_language.append("Thai");
-arraylist_language.append("Tigrinya");
-arraylist_language.append("Tsonga");
-arraylist_language.append("Turkish");
-arraylist_language.append("Turkmen");
-arraylist_language.append("Twi (Akan)");
-arraylist_language.append("Ukrainian");
-arraylist_language.append("Urdu");
-arraylist_language.append("Uyghur");
-arraylist_language.append("Uzbek");
-arraylist_language.append("Vietnamese");
-arraylist_language.append("Welsh");
-arraylist_language.append("Xhosa");
-arraylist_language.append("Yiddish");
-arraylist_language.append("Yoruba");
-arraylist_language.append("Zulu");
+arraylist_language.append("Afrikaans")
+arraylist_language.append("Albanian")
+arraylist_language.append("Amharic")
+arraylist_language.append("Arabic")
+arraylist_language.append("Armenian")
+arraylist_language.append("Assamese")
+arraylist_language.append("Aymara")
+arraylist_language.append("Azerbaijani")
+arraylist_language.append("Bambara")
+arraylist_language.append("Basque")
+arraylist_language.append("Belarusian")
+arraylist_language.append("Bengali (Bangla)")
+arraylist_language.append("Bhojpuri")
+arraylist_language.append("Bosnian")
+arraylist_language.append("Bulgarian")
+arraylist_language.append("Catalan")
+arraylist_language.append("Cebuano")
+arraylist_language.append("Chichewa, Nyanja")
+arraylist_language.append("Chinese (Simplified)")
+arraylist_language.append("Chinese (Traditional)")
+arraylist_language.append("Corsican")
+arraylist_language.append("Croatian")
+arraylist_language.append("Czech")
+arraylist_language.append("Danish")
+arraylist_language.append("Divehi, Maldivian")
+arraylist_language.append("Dogri")
+arraylist_language.append("Dutch")
+arraylist_language.append("English")
+arraylist_language.append("Esperanto")
+arraylist_language.append("Estonian")
+arraylist_language.append("Ewe")
+arraylist_language.append("Filipino")
+arraylist_language.append("Finnish")
+arraylist_language.append("French")
+arraylist_language.append("Frisian")
+arraylist_language.append("Galician")
+arraylist_language.append("Georgian")
+arraylist_language.append("German")
+arraylist_language.append("Greek")
+arraylist_language.append("Guarani")
+arraylist_language.append("Gujarati")
+arraylist_language.append("Haitian Creole")
+arraylist_language.append("Hausa")
+arraylist_language.append("Hawaiian")
+arraylist_language.append("Hebrew")
+arraylist_language.append("Hindi")
+arraylist_language.append("Hmong")
+arraylist_language.append("Hungarian")
+arraylist_language.append("Icelandic")
+arraylist_language.append("Igbo")
+arraylist_language.append("Ilocano")
+arraylist_language.append("Indonesian")
+arraylist_language.append("Irish")
+arraylist_language.append("Italian")
+arraylist_language.append("Japanese")
+arraylist_language.append("Javanese")
+arraylist_language.append("Kannada")
+arraylist_language.append("Kazakh")
+arraylist_language.append("Khmer")
+arraylist_language.append("Kinyarwanda (Rwanda)")
+arraylist_language.append("Konkani")
+arraylist_language.append("Korean")
+arraylist_language.append("Krio")
+arraylist_language.append("Kurdish (Kurmanji)")
+arraylist_language.append("Kurdish (Sorani)")
+arraylist_language.append("Kyrgyz")
+arraylist_language.append("Lao")
+arraylist_language.append("Latin")
+arraylist_language.append("Latvian (Lettish)")
+arraylist_language.append("Lingala")
+arraylist_language.append("Lithuanian")
+arraylist_language.append("Luganda, Ganda")
+arraylist_language.append("Luxembourgish")
+arraylist_language.append("Macedonian")
+arraylist_language.append("Malagasy")
+arraylist_language.append("Malay")
+arraylist_language.append("Malayalam")
+arraylist_language.append("Maltese")
+arraylist_language.append("Maori")
+arraylist_language.append("Marathi")
+arraylist_language.append("Meiteilon (Manipuri)")
+arraylist_language.append("Mizo")
+arraylist_language.append("Mongolian")
+arraylist_language.append("Myanmar (Burmese)")
+arraylist_language.append("Nepali")
+arraylist_language.append("Norwegian")
+arraylist_language.append("Oriya")
+arraylist_language.append("Oromo (Afaan Oromo)")
+arraylist_language.append("Pashto, Pushto")
+arraylist_language.append("Persian (Farsi)")
+arraylist_language.append("Polish")
+arraylist_language.append("Portuguese")
+arraylist_language.append("Punjabi (Eastern)")
+arraylist_language.append("Quechua")
+arraylist_language.append("Romanian, Moldavian")
+arraylist_language.append("Russian")
+arraylist_language.append("Samoan")
+arraylist_language.append("Sanskrit")
+arraylist_language.append("Scots Gaelic")
+arraylist_language.append("Sepedi")
+arraylist_language.append("Serbian")
+arraylist_language.append("Sesotho")
+arraylist_language.append("Shona")
+arraylist_language.append("Sindhi")
+arraylist_language.append("Sinhalese")
+arraylist_language.append("Slovak")
+arraylist_language.append("Slovenian")
+arraylist_language.append("Somali")
+arraylist_language.append("Spanish")
+arraylist_language.append("Sundanese")
+arraylist_language.append("Swahili (Kiswahili)")
+arraylist_language.append("Swedish")
+arraylist_language.append("Tajik")
+arraylist_language.append("Tamil")
+arraylist_language.append("Tatar")
+arraylist_language.append("Telugu")
+arraylist_language.append("Thai")
+arraylist_language.append("Tigrinya")
+arraylist_language.append("Tsonga")
+arraylist_language.append("Turkish")
+arraylist_language.append("Turkmen")
+arraylist_language.append("Twi")
+arraylist_language.append("Ukrainian")
+arraylist_language.append("Urdu")
+arraylist_language.append("Uyghur")
+arraylist_language.append("Uzbek")
+arraylist_language.append("Vietnamese")
+arraylist_language.append("Welsh")
+arraylist_language.append("Xhosa")
+arraylist_language.append("Yiddish")
+arraylist_language.append("Yoruba")
+arraylist_language.append("Zulu")
 
 map_code_of_language = dict(zip(arraylist_language, arraylist_language_code))
 map_language_of_code = dict(zip(arraylist_language_code, arraylist_language))
 
 LANGUAGE_CODES = map_language_of_code
+
 
 def srt_formatter(subtitles, padding_before=0, padding_after=0):
     """
@@ -437,62 +441,11 @@ class SpeechRecognizer(object):
         except KeyboardInterrupt:
             return
 
-def extract_audio(filename, channels=1, rate=16000):
-    temp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    if not os.path.isfile(filename):
-        print("The given file does not exist: {0}".format(filename))
-        raise Exception("Invalid filepath: {0}".format(filename))
-    FFmpeg.execute("-y -i " + "\"" + filename + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"" )
-    return temp.name, rate
-
-
-#def find_speech_regions(filename, frame_width=4096, min_region_size=0.5, max_region_size=6):
-def find_speech_regions(filename, frame_width=4096, min_region_size=0.3, max_region_size=8):
-    global pool, wav_filename, subtitle_file, translated_subtitle_file, converter, recognizer, extracted_regions, transcriptions
-
-    reader = wave.open(filename)
-    sample_width = reader.getsampwidth()
-    rate = reader.getframerate()
-    n_channels = reader.getnchannels()
-
-    total_duration = reader.getnframes() / rate
-    chunk_duration = float(frame_width) / rate
-    n_chunks = int(total_duration / chunk_duration)
-
-    energies = []
-
-    for i in range(n_chunks):
-        chunk = reader.readframes(frame_width)
-        energies.append(audioop.rms(chunk, sample_width * n_channels))
-
-    threshold = percentile(energies, 0.2)
-
-    elapsed_time = 0
-
-    regions = []
-    region_start = None
-
-    i=0
-    for energy in energies:
-        is_silence = energy <= threshold
-        max_exceeded = region_start and elapsed_time - region_start >= max_region_size
-
-        if (max_exceeded or is_silence) and region_start:
-            if elapsed_time - region_start >= min_region_size:
-                regions.append((region_start, elapsed_time))
-                region_start = None
-
-        elif (not region_start) and (not is_silence):
-            region_start = elapsed_time
-        elapsed_time += chunk_duration
-        i=i+1
-
-    return regions
-
 
 def GoogleTranslate(text, src, dst):
     url = 'https://translate.googleapis.com/translate_a/'
     params = 'single?client=gtx&sl='+src+'&tl='+dst+'&dt=t&q='+text;
+    #async with httpx.AsyncClient() as client:
     with httpx.Client(http2=True) as client:
         client.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://translate.google.com',})
         response = client.get(url+params)
@@ -536,95 +489,113 @@ class TranscriptionTranslator(object):
         return translated_sentence
 
 
+def extract_audio(filePath, channels=1, rate=16000):
+    temp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    if not os.path.isfile(filePath):
+        print("The given file does not exist: {0}".format(filePath))
+        raise Exception("Invalid filepath: {0}".format(filePath))
+    FFmpeg.execute("-y -i " + "\"" + filePath + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"")
+    return temp.name, rate
+
+
+#def find_speech_regions(wav_file, frame_width=4096, min_region_size=0.5, max_region_size=6):
+def find_speech_regions(wav_file, frame_width=4096, min_region_size=0.3, max_region_size=8):
+    reader  = wave.open(wav_file)
+    sample_width = reader.getsampwidth()
+    rate = reader.getframerate()
+    n_channels = reader.getnchannels()
+
+    total_duration = reader.getnframes() / rate
+    chunk_duration = float(frame_width) / rate
+    n_chunks = int(total_duration / chunk_duration)
+
+    energies = []
+
+    for i in range(n_chunks):
+        chunk = reader.readframes(frame_width)
+        energies.append(audioop.rms(chunk, sample_width * n_channels))
+
+    threshold = percentile(energies, 0.2)
+
+    elapsed_time = 0
+
+    regions = []
+    region_start = None
+
+    i=0
+    for energy in energies:
+        is_silence = energy <= threshold
+        max_exceeded = region_start and elapsed_time - region_start >= max_region_size
+
+        if (max_exceeded or is_silence) and region_start:
+            if elapsed_time - region_start >= min_region_size:
+                regions.append((region_start, elapsed_time))
+                region_start = None
+
+        elif (not region_start) and (not is_silence):
+            region_start = elapsed_time
+        elapsed_time += chunk_duration
+        i=i+1
+
+    return regions
+
+
 def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_format, activity, textview_debug):
     multiprocessing.freeze_support()
+
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                time.sleep(1)
-                textview_debug.setText("")
-                textview_debug.setText("Process has been canceled")
-        activity.runOnUiThread(R())
+        activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
         return
 
-    #wav_filename = None
     subtitle_file = None
     translated_subtitle_file = None
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                time.sleep(1)
-                textview_debug.setText("")
-                textview_debug.setText("Process has been canceled")
-        activity.runOnUiThread(R())
+        activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
         return
 
     pool = multiprocessing.pool.ThreadPool(10)
 
     #print("Converting to a temporary WAV file")
-    #class R(dynamic_proxy(Runnable)):
-        #def run(self):
-            #textview_debug.setText("Running python script...\n\n");
-            #textview_debug.append("Converting to a temporary WAV file...\n\n")
-    #activity.runOnUiThread(R())
+    #activity.runOnUiThread(setText(textview_debug, "Running python script...\n\n"))
+    #activity.runOnUiThread(appendText(textview_debug, "Converting to a temporary WAV file...\n\n"))
     #time.sleep(1)
     #wav_filename, audio_rate = extract_audio(filename)
     #print("Converted WAV file is : {}".format(wav_filename))
     #if wav_filename:
-        #class R(dynamic_proxy(Runnable)):
-            #def run(self):
-                #textview_debug.append("Converted WAV file is :\n" + wav_filename)
-        #activity.runOnUiThread(R())
+        #activity.runOnUiThread(appendText(textview_debug, "Converted WAV file is :\n" + wav_filename))
         #time.sleep(2)
 
-    class R(dynamic_proxy(Runnable)):
-        def run(self):
-            textview_debug.setText("Running python script...\n");
-    activity.runOnUiThread(R())
+    activity.runOnUiThread(setText(textview_debug, "Running python script...\n"))
     time.sleep(1)
 
     audio_rate = 16000
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        pool.terminate()
-        pool.close()
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                time.sleep(1)
-                textview_debug.setText("")
-                textview_debug.setText("Process has been canceled")
-        activity.runOnUiThread(R())
+        activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
         return
 
     print("Finding speech regions of WAV file")
-    class R(dynamic_proxy(Runnable)):
-        def run(self):
-            textview_debug.setText("Finding speech regions of WAV file...\n\n")
-    activity.runOnUiThread(R())
+    activity.runOnUiThread(setText(textview_debug, "Finding speech regions of WAV file...\n"))
+
     regions = find_speech_regions(wav_filename)
+    #i=0
+    #for region in regions:
+        #print("{} {}".format(i, region))
+        #i+=1
     num = len(regions)
     time.sleep(1)
-    class R(dynamic_proxy(Runnable)):
-        def run(self):
-            textview_debug.append("Speech regions found = " + str(num) + "\n\n")
-    activity.runOnUiThread(R())
-    print("Speech regions found = {}".format(str(num)))
+
+    activity.runOnUiThread(appendText(textview_debug, "Speech regions found = " + str(num) + "\n"))
     time.sleep(1)
+    print("Speech regions found = {}".format(str(num)))
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        pool.terminate()
-        pool.close()
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                time.sleep(1)
-                textview_debug.setText("")
-                textview_debug.setText("Process has been canceled")
-        activity.runOnUiThread(R())
+        activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
         return
 
     converter = FLACConverter(source_path=wav_filename)
@@ -635,16 +606,10 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
         os.remove(cancel_file)
         pool.terminate()
         pool.close()
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                time.sleep(1)
-                textview_debug.setText("")
-                textview_debug.setText("Process has been canceled")
-        activity.runOnUiThread(R())
+        activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
         return
 
     if regions:
-        time.sleep(2)
         print("Converting speech regions to FLAC files")
         extracted_regions = []
         for i, extracted_region in enumerate(pool.imap(converter, regions)):
@@ -653,32 +618,20 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
             extracted_regions.append(extracted_region)
             pBar(i, len(regions), "Converting speech regions to FLAC : ", activity, textview_debug)
-        time.sleep(1)
         pBar(len(regions), len(regions), "Converting speech regions to FLAC : ", activity, textview_debug)
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    time.sleep(1)
-                    textview_debug.setText("")
-                    textview_debug.setText("Process has been canceled")
-            activity.runOnUiThread(R())
+            activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
             return
 
-        time.sleep(2)
         print("Creating subtitles")
         for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
 
@@ -686,32 +639,27 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
             transcriptions.append(transcription)
             pBar(i, len(regions), "Creating subtitles : ", activity, textview_debug)
-        time.sleep(1)
         pBar(len(regions), len(regions), "Creating subtitles : ", activity, textview_debug)
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    time.sleep(1)
-                    textview_debug.setText("")
-                    textview_debug.setText("Process has been canceled")
-            activity.runOnUiThread(R())
+            activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
             return
 
         timed_subtitles = [(r, t) for r, t in zip(regions, transcriptions) if t]
+
+        #i=0
+        #for ts in timed_subtitles:
+            #print("{} {}".format(i, ts))
+            #i+=1
+
         formatter = FORMATTERS.get(subtitle_format)
         formatted_subtitles = formatter(timed_subtitles)
 
@@ -725,12 +673,7 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    time.sleep(1)
-                    textview_debug.setText("")
-                    textview_debug.setText("Process has been canceled")
-            activity.runOnUiThread(R())
+            activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
             return
 
         with open(subtitle_file, 'wb') as f:
@@ -748,12 +691,7 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
             translated_subtitle_file = subtitle_file[ :-4] + '.translated.' + subtitle_format
@@ -766,7 +704,7 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
 
             transcription_translator = TranscriptionTranslator(src=src, dest=dest)
             translated_transcriptions = []
-            time.sleep(2)
+
             print("Translating subtitles")
             for i, translated_transcription in enumerate(pool.imap(transcription_translator, created_subtitles)):
 
@@ -774,29 +712,18 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
                     os.remove(cancel_file)
                     pool.terminate()
                     pool.close()
-                    class R(dynamic_proxy(Runnable)):
-                        def run(self):
-                            time.sleep(1)
-                            textview_debug.setText("")
-                            textview_debug.setText("Process has been canceled")
-                    activity.runOnUiThread(R())
+                    activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                     return
 
                 translated_transcriptions.append(translated_transcription)
-                pBar(i, len(transcriptions), "Translating subtitles : ", activity, textview_debug)
-            time.sleep(1)
+                pBar(i, len(transcriptions), "Translating subtitles : " , activity, textview_debug)
             pBar(len(transcriptions), len(transcriptions), "Translating subtitles : ", activity, textview_debug)
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
             timed_translated_subtitles = [(r, t) for r, t in zip(created_regions, translated_transcriptions) if t]
@@ -812,47 +739,29 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
             print('Temporary subtitles file created at            : {}'.format(subtitle_file))
             print('Temporary translated subtitles file created at : {}'.format(translated_subtitle_file))
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    time.sleep(1)
-                    textview_debug.append("\n\nTemporary subtitles file created at :\n")
-                    textview_debug.append(subtitle_file + "\n\n")
-                    textview_debug.append("Temporary translated subtitles file created at:\n")
-                    textview_debug.append(translated_subtitle_file + "\n\n")
-            activity.runOnUiThread(R())
-            time.sleep(2)
+
+            activity.runOnUiThread(appendText(textview_debug, "\nTemporary subtitles file created at :\n"))
+            activity.runOnUiThread(appendText(textview_debug, subtitle_file + "\n"))
+            activity.runOnUiThread(appendText(textview_debug, "Temporary translated subtitles file created at:\n"))
+            activity.runOnUiThread(appendText(textview_debug, translated_subtitle_file + "\n"))
+            time.sleep(1)
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                class R(dynamic_proxy(Runnable)):
-                    def run(self):
-                        time.sleep(1)
-                        textview_debug.setText("")
-                        textview_debug.setText("Process has been canceled")
-                activity.runOnUiThread(R())
+                activity.runOnUiThread(setText(textview_debug, "Process has been canceled"))
                 return
 
         elif (is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
             print("Temporary subtitles file created at      : {}".format(subtitle_file))
-            class R(dynamic_proxy(Runnable)):
-                def run(self):
-                    time.sleep(1)
-                    textview_debug.append("\n\nTemporary subtitles file created at :\n")
-                    textview_debug.append(subtitle_file + "\n\n")
-            activity.runOnUiThread(R())
-            time.sleep(2)
+            activity.runOnUiThread(appendText(textview_debug, "\nTemporary subtitles file created at :\n"))
+            activity.runOnUiThread(appendText(textview_debug, subtitle_file + "\n"))
 
     pool.close()
     pool.join()
@@ -869,28 +778,33 @@ def transcribe(src, dest, filename, file_display_name, wav_filename, subtitle_fo
     return subtitle_file
 
 
-def setText(text, activity, textview_debug):
-    class R(dynamic_proxy(Runnable)):
-        def __init__(self, text):
-            super().__init__()
-            self.text = text
-        def run(self):
-            textview_debug.setText(self.text)
-    activity.runOnUiThread(R(text))
-
-
 def pBar(count_value, total, prefix, activity, textview_debug):
     bar_length = 10
     filled_up_Length = int(round(bar_length*count_value/(total)))
     percentage = round(100.0 * count_value/(total),1)
-    #bar = '#' * filled_up_Length + '-' * (bar_length - filled_up_Length)
+    #bar = '#' * filled_up_Length + ' ' * (bar_length - filled_up_Length)
     bar = '█' * filled_up_Length + '-' * (bar_length - filled_up_Length)
-    # dynamic_proxy will make app crash if repeatly called to fast that's why we made a BARRIER 'if (int(percentage) % 10 == 0):'
-    # and time.sleep(seconds)
-    if (int(percentage) % 10 == 0):
-        time.sleep(1)
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                #textview_debug.setText('%s[%10s]%3s%s\r' %(prefix, bar, int(percentage), '%'))
-                textview_debug.setText('%s|%10s|%3s%s\r' %(prefix, bar, int(percentage), '%'))
-        activity.runOnUiThread(R())
+    strings = ('%s|%10s|%3s%s\r' %(prefix, bar, int(percentage), '%'))
+    activity.runOnUiThread(setText(textview_debug, strings))
+
+
+class setText(static_proxy(None, Runnable)):
+    def __init__(self, textview_debug, strings):
+        super(setText, self).__init__()
+        self.textview_debug = textview_debug
+        self.strings = strings
+
+    @Override(jvoid, [])
+    def run(self):
+        self.textview_debug.setText(self.strings)
+
+class appendText(static_proxy(None, Runnable)):
+    def __init__(self, textview_debug, strings):
+        super(appendText, self).__init__()
+        self.textview_debug = textview_debug
+        self.strings = strings
+
+    @Override(jvoid, [])
+    def run(self):
+        self.textview_debug.append(self.strings)
+

@@ -1130,12 +1130,10 @@ public class MainActivity extends AppCompatActivity {
                 if(authority.equals("media")) {
                     idStr = uri.toString().substring(uri.toString().lastIndexOf('/') + 1);
                     System.out.println("media idStr = " + idStr);
-                    return idStr;
                 }
                 else if(authority.startsWith("com.android.providers")) {
                     idStr = DocumentsContract.getDocumentId(uri).split(":")[1];
                     System.out.println("providers idStr = " + idStr);
-                    return idStr;
                 }
 
                 ContentResolver contentResolver = context.getContentResolver();

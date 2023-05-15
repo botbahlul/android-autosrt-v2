@@ -842,9 +842,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                 Log.d("onCreated", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
             }
-            if (FOLDER.SAVED_URI_LIST.size() == 0) {
-                requestTreeUriPermissions();
-            }
+            requestTreeUriPermissions();
         });
 
 
@@ -931,6 +929,14 @@ public class MainActivity extends AppCompatActivity {
 
         if (!isInternetAvailable()) {
             setText(textview_output_messages_1, "It seems that you're not connected to internet, this app won't work without internet connection.");
+        }
+
+        try {
+            Class.forName("dalvik.system.CloseGuard")
+                    .getMethod("setEnabled", boolean.class)
+                    .invoke(null, true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
 
     }

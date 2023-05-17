@@ -62,11 +62,12 @@ public class TranscribeActivity extends AppCompatActivity {
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_filepath;
     @SuppressLint("StaticFieldLeak")
-    public static TextView textview_current_file;
+    public static TextView textview_currentFilePathProceed;
 
     TextView textview_progress;
     ProgressBar progressBar;
     TextView textview_percentage;
+    TextView textview_time;
 
     @SuppressLint("StaticFieldLeak")
     public static TextView textview_output_messages_2;
@@ -84,6 +85,9 @@ public class TranscribeActivity extends AppCompatActivity {
     int maxLinesOfOutputMessages;
     int maxChars = 0;
     String equals;
+    long transcribeStartTime;
+    long transcribeElapsedTime;
+    String formattedElapsedTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,13 +96,14 @@ public class TranscribeActivity extends AppCompatActivity {
         textview_src = findViewById(R.id.textview_src);
         textview_dst = findViewById(R.id.textview_dst);
         textview_filepath = findViewById(R.id.textview_filepath);
-        textview_current_file = findViewById(R.id.textview_current_file);
+        textview_currentFilePathProceed = findViewById(R.id.textview_currentFilePathProceed);
         textview_output_messages_2 = findViewById(R.id.textview_output_messages_2);
         button_cancel = findViewById(R.id.button_cancel);
 
         textview_progress = findViewById(R.id.textview_progress);
         progressBar = findViewById(R.id.progressBar);
         textview_percentage = findViewById(R.id.textview_percentage);
+        textview_time = findViewById(R.id.textview_time);
 
         String vl = "Voice Language = " + LANGUAGE.SRC_LANGUAGE;
         runOnUiThread(() -> textview_src.setText(vl));
@@ -150,12 +155,13 @@ public class TranscribeActivity extends AppCompatActivity {
             }
         }
 
+        transcribeStartTime = System.currentTimeMillis();
         if (TRANSCRIBE_STATUS.IS_TRANSCRIBING) {
             transcribe();
         }
         button_cancel.setOnClickListener(view -> showConfirmationDialogue());
 
-        textview_current_file.setHint("");
+        textview_currentFilePathProceed.setHint("");
         textview_progress.setHint("");
         textview_percentage.setHint("");
         hideProgressBar();
@@ -170,6 +176,15 @@ public class TranscribeActivity extends AppCompatActivity {
             Log.d("onCreate", "maxChars = " + maxChars);
             equals = StringUtils.repeat('=', maxChars - 2);
         });
+
+        try {
+            Class.forName("dalvik.system.CloseGuard")
+                    .getMethod("setEnabled", boolean.class)
+                    .invoke(null, true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -188,6 +203,7 @@ public class TranscribeActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("DefaultLocale")
     private void transcribe() {
         setText(textview_output_messages_2, "");
         runOnUiThread(() -> {
@@ -228,7 +244,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                 py = Python.getInstance();
                             }
 
-                            setText(textview_current_file, "Processing file : " + FILE.DISPLAY_NAME_LIST.get(i));
+                            setText(textview_currentFilePathProceed, "Processing file : " + FILE.DISPLAY_NAME_LIST.get(i));
                             int finalI = i;
                             textview_output_messages_2.post(() -> {
                                 appendText(textview_output_messages_2, equals + "\n");
@@ -249,7 +265,8 @@ public class TranscribeActivity extends AppCompatActivity {
                                     textview_output_messages_2,
                                     textview_progress,
                                     progressBar,
-                                    textview_percentage
+                                    textview_percentage,
+                                    textview_time
                             );
 
                             if (pyObjTmpSubtitleFilePath != null) {
@@ -319,6 +336,18 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     }
                                                 }
                                                 appendText(textview_output_messages_2, equals + "\n");
+                                                Log.d("transcribe", "transcribeStartTime = " + transcribeStartTime);
+                                                Log.d("transcribe", "transcribeEndTime = " + System.currentTimeMillis());
+                                                transcribeElapsedTime = System.currentTimeMillis() - transcribeStartTime;
+                                                Log.d("transcribe", "transcribeElapsedTime = " + transcribeElapsedTime);
+                                                long totalSeconds = transcribeElapsedTime / 1000;
+                                                Log.d("transcribe", "totalSeconds = " + totalSeconds);
+                                                long hours = totalSeconds / 3600;
+                                                long minutes = (totalSeconds % 3600) / 60;
+                                                long seconds = totalSeconds % 60;
+                                                formattedElapsedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+                                                appendText(textview_output_messages_2, "Transcribe total time : " + formattedElapsedTime + "\n");
+                                                appendText(textview_output_messages_2, equals + "\n");
                                             }
 
                                         }
@@ -349,7 +378,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                 }
                             }
                         }
-                        setText(textview_current_file, "");
+                        setText(textview_currentFilePathProceed, "");
 
                         if (TRANSCRIBE_STATUS.IS_TRANSCRIBING && FILE.URI_LIST != null) {
                             if (threadTranscriber != null) {
@@ -748,6 +777,7 @@ public class TranscribeActivity extends AppCompatActivity {
 
         String savedSubtitleFilePath = null;
 
+        ParcelFileDescriptor subtitleParcelFileDescriptor = null;
         try {
             tmpSubtitleInputStream = getApplicationContext().getContentResolver().openInputStream(tmpSubtitleUri);
         } catch (FileNotFoundException e) {
@@ -757,6 +787,7 @@ public class TranscribeActivity extends AppCompatActivity {
         }
 
         if (selectedDirDocumentFile != null) {
+
             if (!selectedDirDocumentFile.exists()) {
                 Log.e("saveSubtitleFileToSelectedDir", selectedDirDocumentFile +  " is not exists");
                 releasePermissions(selectedDirUri);
@@ -773,8 +804,8 @@ public class TranscribeActivity extends AppCompatActivity {
                     savedSubtitleFilePath = Uri2Path(getApplicationContext(), savedSubtitleUri);
                     Log.d("saveSubtitleFileToSelectedDir", "savedSubtitleFilePath = " + savedSubtitleFilePath);
                     try {
-                        ParcelFileDescriptor parcelFileDescriptor = getContentResolver().openFileDescriptor(savedSubtitleUri, "w");
-                        savedSubtitleOutputStream = new FileOutputStream(parcelFileDescriptor.getFileDescriptor());
+                        subtitleParcelFileDescriptor = getContentResolver().openFileDescriptor(savedSubtitleUri, "w");
+                        savedSubtitleOutputStream = new FileOutputStream(subtitleParcelFileDescriptor.getFileDescriptor());
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
@@ -817,6 +848,16 @@ public class TranscribeActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
 
+        try {
+            if (subtitleParcelFileDescriptor != null) {
+                subtitleParcelFileDescriptor.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        ParcelFileDescriptor translatedSubtitleParcelFileDescriptor = null;
+
         if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
             if (selectedDirDocumentFile == null || !selectedDirDocumentFile.exists()) {
                 Log.e("saveSubtitleFileToSelectedDir", selectedDirDocumentFile +  " not exists");
@@ -833,8 +874,8 @@ public class TranscribeActivity extends AppCompatActivity {
                     String savedTranslatedSubtitleFile = Uri2Path(getApplicationContext(), savedTranslatedSubtitleUri);
                     Log.d("saveSubtitleFileToSelectedDir", "savedTranslatedSubtitleFile = " + savedTranslatedSubtitleFile);
                     try {
-                        ParcelFileDescriptor parcelFileDescriptor = getContentResolver().openFileDescriptor(savedTranslatedSubtitleUri, "w");
-                        savedTranslatedSubtitleOutputStream = new FileOutputStream(parcelFileDescriptor.getFileDescriptor());
+                        translatedSubtitleParcelFileDescriptor = getContentResolver().openFileDescriptor(savedTranslatedSubtitleUri, "w");
+                        savedTranslatedSubtitleOutputStream = new FileOutputStream(translatedSubtitleParcelFileDescriptor.getFileDescriptor());
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
@@ -883,6 +924,15 @@ public class TranscribeActivity extends AppCompatActivity {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
+
+            try {
+                if (translatedSubtitleParcelFileDescriptor != null) {
+                    translatedSubtitleParcelFileDescriptor.close();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
         }
 
         if (savedSubtitleFilePath != null) {
@@ -1047,6 +1097,7 @@ public class TranscribeActivity extends AppCompatActivity {
             textview_progress.setVisibility(View.INVISIBLE);
             progressBar.setVisibility(View.INVISIBLE);
             textview_percentage.setVisibility(View.INVISIBLE);
+            textview_time.setVisibility(View.INVISIBLE);
         });
     }
 

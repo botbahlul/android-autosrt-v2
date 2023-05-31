@@ -15,3 +15,5 @@ Tested on Pixel 2 API 25 emulator, Nexus 5X API 30 emulator, and Xiaomi Redmi No
 Check other version that use only 1 activity
 
 https://github.com/botbahlul/android-autosrt
+
+Check my other SPEECH RECOGNITIION + TRANSLATE PROJECTS https://github.com/botbahlul?tab=repositories

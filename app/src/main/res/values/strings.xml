@@ -19,7 +19,4 @@
     <string name="needed_for_overwriting_existing_subtitle_files_otherwise_all_subtitle_files_will_always_be_saved_as_new_files_except_if_you_grant_persisted_tree_uri_permission">(needed for overwriting existing subtitle files, otherwise all subtitle files will always be saved as new files, except persisted tree uri permission is granted)</string>
     <string name="grant_persisted_tree_uri_permission">GRANT PERSISTED TREE URI PERMISSION</string>
     <string name="needed_for_saving_subtitle_files_into_same_folder_as_your_videos_audios_files">(needed for saving subtitle files into same folder as your videos/audios files)</string>
-    <string name="ETA">ETA :00:00:00</string>
-    <string name="percentage">0%</string>
-    <string name="current_progress">Current progress</string>
 </resources>

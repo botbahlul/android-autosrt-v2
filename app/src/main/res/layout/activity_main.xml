@@ -293,7 +293,7 @@
             android:textSize="14sp"
             android:typeface="sans"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="144dp"
             android:layout_below="@+id/button_start"
             android:layout_centerHorizontal="true"
             android:layout_marginStart="5dp"

@@ -39,16 +39,16 @@ context = Python.getPlatform().getApplication()
 files_dir = str(context.getExternalFilesDir(None))
 cancel_file = join(files_dir, 'cancel.txt')
 cache_dir = str(context.getExternalCacheDir())
-transcriptions_file = join(cache_dir, "transcriptions.txt")
+transcriptions_file = join(cache_dir, "src_transcriptions.txt")
 region_start_file = join(cache_dir, 'region_starts.txt')
 elapsed_time_file = join(cache_dir, 'elapsed_time.txt')
 wav_filename = None
-subtitle_file = None
-translated_subtitle_file = None
+src_subtitle_filepath = None
+dst_subtitle_filepath = None
 converter = None
 recognizer = None
 extracted_regions = None
-transcription = None
+src_transcription = None
 subtitle_folder_name = None
 pool = None
 lines = 0
@@ -451,27 +451,6 @@ class SpeechRecognizer(object):
             return
 
 
-'''
-def GoogleTranslate(text, src, dst):
-    url = 'https://translate.googleapis.com/translate_a/'
-    params = 'single?client=gtx&sl='+src+'&tl='+dst+'&dt=t&q='+text;
-    with httpx.Client(http2=True) as client:
-        client.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://translate.google.com',})
-        response = client.get(url+params)
-        #print('response.status_code = {}'.format(response.status_code))
-        if response.status_code == 200:
-            response_json = response.json()[0]
-            #print('response_json = {}'.format(response_json))
-            length = len(response_json)
-            #print('length = {}'.format(length))
-            translation = ''
-            for i in range(length):
-                #print("{} {}".format(i, response_json[i][0]))
-                translation = translation + response_json[i][0]
-            return translation
-        return
-'''
-
 def GoogleTranslate(text, src, dst):
     url = 'https://translate.googleapis.com/translate_a/'
     params = 'single?client=gtx&sl='+src+'&tl='+dst+'&dt=t&q='+text;
@@ -488,9 +467,9 @@ def GoogleTranslate(text, src, dst):
 
 
 class TranscriptionTranslator(object):
-    def __init__(self, src, dest, patience=-1):
+    def __init__(self, src, dst, patience=-1):
         self.src = src
-        self.dest = dest
+        self.dst = dst
         self.patience = patience
 
     def __call__(self, sentence):
@@ -499,11 +478,11 @@ class TranscriptionTranslator(object):
         if not sentence:
             return None
 
-        translated_sentence = GoogleTranslate(sentence, src=self.src, dst=self.dest)
+        translated_sentence = GoogleTranslate(sentence, src=self.src, dst=self.dst)
 
         fail_to_translate = translated_sentence[-1] == '\n'
         while fail_to_translate and patience:
-            translated_sentence = GoogleTranslate(translated_sentence, src=self.src, dest=self.dest).text
+            translated_sentence = GoogleTranslate(translated_sentence, src=self.src, dst=self.dst).text
             if translated_sentence[-1] == '\n':
                 if patience == -1:
                     continue
@@ -512,34 +491,6 @@ class TranscriptionTranslator(object):
                 fail_to_translate = False
         return translated_sentence
 
-'''
-class MyStatisticsCallback(dynamic_proxy(StatisticsCallback)):
-    def __init__(self, videoLength, activity, textview_progress, progress_bar, textview_percentage, textview_time):
-        super(MyStatisticsCallback, self).__init__()
-        self.videoLength = videoLength
-        self.activity = activity
-        self.textview_progress = textview_progress
-        self.progress_bar = progress_bar
-        self.textview_percentage = textview_percentage
-        self.progress = AtomicReference(0.0)
-        Config.resetStatistics()
-
-    def apply(self, newStatistics):
-        # Handle new statistics data
-        getTime = newStatistics.getTime()
-        print("getTime = {}".format(getTime))
-        strGetTime = str(getTime)
-        print("strGetTime = {}".format(strGetTime))
-        floatStrGetTime = float(strGetTime)
-        print("floatStrGetTime = {}".format(floatStrGetTime))
-        #self.progress.set(float(str(newStatistics.getTime())) / self.videoLength)
-        self.progress.set(floatStrGetTime/self.videoLength)
-        print("self.progress = {}".format(self.progress))
-        progressFinal = int(self.progress.get()*100)
-        print("progressFinal = {}".format(progressFinal))
-        #percentage = round(100.0*progressFinal/100, 1)
-        pbar(progressFinal, 100, "Converting to WAV file : ", self.activity, self.textview_progress, self.progress_bar, self.textview_percentage)
-'''
 
 class MyStatisticsCallback(dynamic_proxy(StatisticsCallback)):
     def __init__(self, info, media_duration, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time):
@@ -572,27 +523,6 @@ class MyStatisticsCallback(dynamic_proxy(StatisticsCallback)):
         if int(getTime/1000) >= int(self.media_duration/1000):
             pbar(100, self.start_time, 100, self.info, self.activity, self.textview_progress, self.progress_bar, self.textview_percentage, self.textview_time)
 
-'''
-def convert_to_wav(filePath, activity, textview_progress, progress_bar, textview_percentage, textview_time):
-    channels=1
-    rate=16000
-    temp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    if not os.path.isfile(filePath):
-        print("The given file does not exist: {0}".format(filePath))
-        raise Exception("Invalid filepath: {0}".format(filePath))
-
-    Config.enableRedirection()
-    file = File(filePath)
-    fileUri = Uri.fromFile(file)
-    videoLength = MediaPlayer.create(activity, fileUri).getDuration()
-    print("videoLength = {}".format(videoLength))
-    info = "Converting to WAV file : "
-    start_time = time.time()
-    Config.enableStatisticsCallback(MyStatisticsCallback(info, videoLength, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time))
-
-    FFmpeg.execute("-y -i " + "\"" + filePath + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"")
-    return temp.name, rate
-'''
 
 def convert_to_wav(filePath, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time):
     channels=1
@@ -607,13 +537,11 @@ def convert_to_wav(filePath, start_time, activity, textview_progress, progress_b
     fileUri = Uri.fromFile(file)
     videoLength = MediaPlayer.create(activity, fileUri).getDuration()
     print("videoLength = {}".format(videoLength))
-    info = "Converting to WAV file : "
+    info = "Converting to WAV file"
     Config.enableStatisticsCallback(MyStatisticsCallback(info, videoLength, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time))
 
     FFmpeg.execute("-y -i " + "\"" + filePath + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"")
     return temp.name, rate
-
-
 
 
 #def find_speech_regions(wav_file, frame_width=4096, min_region_size=0.5, max_region_size=6):
@@ -658,8 +586,16 @@ def find_speech_regions(wav_file, frame_width=4096, min_region_size=0.3, max_reg
     return regions
 
 
-def transcribe(src, dest, filename, file_display_name, subtitle_format, activity, textview_output_messages, textview_progress, progressBar, textview_percentage, textview_time):
+def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_format, activity, textview_output_messages, textview_progress, progress_bar, textview_percentage, textview_time):
     multiprocessing.freeze_support()
+
+    print(f"media_filepath = {media_filepath}")
+
+    base, ext = os.path.splitext(media_filepath)
+    media_file_display_name = os.path.basename(media_filepath).split('/')[-1]
+    print(f"media_file_display_name = {media_file_display_name}")
+    media_file_format = ext[1:]
+    print(f"media_file_format = {media_file_format}")
 
     Config.disableRedirection()
     Config.resetStatistics()
@@ -667,48 +603,57 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
         return
 
-    subtitle_file = None
-    translated_subtitle_file = None
+    src_subtitle_filepath = None
+    dst_subtitle_filepath = None
+    results = []
+
+    files_dir = str(context.getExternalFilesDir(None))
+    dashChars_file_display_name = "dashChars"
+    dashChars_filepath = join(files_dir, dashChars_file_display_name)
+    dashChars_file = open(dashChars_filepath, "r")
+    dashChars = dashChars_file.read()
+    dashChars_file.close()
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
         return
 
     pool = multiprocessing.pool.ThreadPool(10)
 
+    print("Running python script...")
     activity.runOnUiThread(appendText(textview_output_messages, "Running python script...\n"))
-    activity.runOnUiThread(setVisibility(textview_progress, progressBar, textview_percentage, textview_time, View.VISIBLE))
-    activity.runOnUiThread(setText(textview_progress, "Converting to WAV file : "))
-    activity.runOnUiThread(setText(textview_percentage, "0%"))
+
+    activity.runOnUiThread(setVisibility(textview_progress, progress_bar, textview_percentage, textview_time, View.VISIBLE))
 
     Config.enableRedirection()
-    print("Converting to WAV file")
-    activity.runOnUiThread(appendText(textview_output_messages, "Converting to WAV file\n"))
-    print("filename = {}".format(filename))
-    convert_to_wav_start_time = time.time()
-    pbar(0, convert_to_wav_start_time, 100, "Converting to WAV file : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
 
-    wav_filename, audio_rate = convert_to_wav(filename, convert_to_wav_start_time, activity, textview_progress, progressBar, textview_percentage, textview_time)
+    print("Converting to WAV file...")
+    activity.runOnUiThread(appendText(textview_output_messages, "Converting to WAV file...\n"))
+
+    convert_to_wav_start_time = time.time()
+    pbar(0, convert_to_wav_start_time, 100, "Converting to WAV file", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+
+    wav_filename, audio_rate = convert_to_wav(media_filepath, convert_to_wav_start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time)
 
     print("Converted WAV file is : {}".format(wav_filename))
     activity.runOnUiThread(appendText(textview_output_messages, "Converted WAV file created\n"))
+
     Config.disableRedirection()
-    pbar(100, convert_to_wav_start_time, 100, "Converting to WAV file : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
-    activity.runOnUiThread(setVisibility(textview_progress, progressBar, textview_percentage, textview_time, View.INVISIBLE))
+
+    pbar(100, convert_to_wav_start_time, 100, "Converting to WAV file", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+    time.sleep(1)
+    activity.runOnUiThread(setVisibility(textview_progress, progress_bar, textview_percentage, textview_time, View.INVISIBLE))
 
     audio_rate = 16000
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
         return
 
-    print("Finding speech regions of WAV file")
-    activity.runOnUiThread(appendText(textview_output_messages, "Finding speech regions of WAV file\n"))
+    print("Finding speech regions of WAV file...")
+    activity.runOnUiThread(appendText(textview_output_messages, "Finding speech regions of WAV file...\n"))
 
     regions = find_speech_regions(wav_filename)
     #i=0
@@ -717,13 +662,12 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
         #i+=1
     #time.sleep(1)
 
+    print("Speech regions found = {}".format(str(len(regions))))
     activity.runOnUiThread(appendText(textview_output_messages, "Speech regions found = " + str(len(regions)) + "\n"))
     time.sleep(1)
-    print("Speech regions found = {}".format(str(len(regions))))
 
     if os.path.isfile(cancel_file):
         os.remove(cancel_file)
-        #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
         return
 
     converter = FLACConverter(source_path=wav_filename)
@@ -733,16 +677,17 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
         os.remove(cancel_file)
         pool.terminate()
         pool.close()
-        #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
         return
 
     if regions:
-        activity.runOnUiThread(setVisibility(textview_progress, progressBar, textview_percentage, textview_time, View.VISIBLE))
-        activity.runOnUiThread(setText(textview_progress, "Converting to FLAC files : "))
-
-        print("Converting to FLAC files")
-        activity.runOnUiThread(appendText(textview_output_messages, "Converting to FLAC files\n"))
+        activity.runOnUiThread(setVisibility(textview_progress, progress_bar, textview_percentage, textview_time, View.VISIBLE))
+ 
+        print("Converting to FLAC files...")
+        activity.runOnUiThread(appendText(textview_output_messages, "Converting to FLAC files...\n"))
+ 
         convert_to_flac_start_time = time.time()
+        pbar(0, convert_to_flac_start_time, 100, "Converting to FLAC files", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+
         extracted_regions = []
         for i, extracted_region in enumerate(pool.imap(converter, regions)):
 
@@ -750,31 +695,32 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
             extracted_regions.append(extracted_region)
             progress = int(i*100/len(regions))
 
-            pbar(progress, convert_to_flac_start_time, 100, "Converting to FLAC files : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
-        pbar(100, convert_to_flac_start_time, 100, "Converting to FLAC files : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
+            pbar(progress, convert_to_flac_start_time, 100, "Converting to FLAC files", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        pbar(100, convert_to_flac_start_time, 100, "Converting to FLAC files", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        time.sleep(1)
 
+        print("FLAC files created")
         activity.runOnUiThread(appendText(textview_output_messages, "FLAC files created\n"))
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
             return
 
-        print("Creating transcriptions")
-        activity.runOnUiThread(appendText(textview_output_messages, "Creating transcriptions\n"))
+        print("Creating transcriptions...")
+        activity.runOnUiThread(appendText(textview_output_messages, "Creating transcriptions...\n"))
 
-        transcriptions = []
         create_transcription_start_time = time.time()
+        pbar(0, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
 
-        for i, transcription in enumerate(pool.imap(recognizer, extracted_regions)):
+        src_transcriptions = []
+        for i, src_transcription in enumerate(pool.imap(recognizer, extracted_regions)):
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
@@ -783,11 +729,12 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
-            transcriptions.append(transcription)
+            src_transcriptions.append(src_transcription)
             progress = int(i*100/len(regions))
 
-            pbar(progress, create_transcription_start_time, 100, "Creating transcriptions : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
-        pbar(100, create_transcription_start_time, 100, "Creating transcriptions : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
+            pbar(progress, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        pbar(100, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        time.sleep(1)
 
         activity.runOnUiThread(appendText(textview_output_messages, "Transcriptions created\n"))
 
@@ -795,10 +742,9 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
             return
 
-        timed_subtitles = [(r, t) for r, t in zip(regions, transcriptions) if t]
+        timed_subtitles = [(r, t) for r, t in zip(regions, src_transcriptions) if t]
         #i=0
         #for ts in timed_subtitles:
             #print("{} {}".format(i, ts))
@@ -808,34 +754,37 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
         formatted_subtitles = formatter(timed_subtitles)
 
         files_dir = str(context.getExternalFilesDir(None))
-        subtitle_folder_name = join(files_dir, file_display_name[:-len(subtitle_format)-1])
+        subtitle_folder_name = join(files_dir, media_file_display_name[:-len(media_file_format)-1])
         if not os.path.isdir(subtitle_folder_name):
             os.mkdir(subtitle_folder_name)
-        subtitle_file = join(subtitle_folder_name, file_display_name[:-len(subtitle_format)-1] + "." + subtitle_format)
+
+        src_subtitle_filepath = f"{subtitle_folder_name + os.sep + media_file_display_name[:-len(media_file_format)-1]}.{src}.{subtitle_format}"
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
             pool.terminate()
             pool.close()
-            #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
             return
 
-        activity.runOnUiThread(appendText(textview_output_messages, "Writing temporary subtitle files\n"))
+        print("Writing temporary subtitle files...")
+        activity.runOnUiThread(appendText(textview_output_messages, "Writing temporary subtitle files...\n"))
 
-        with open(subtitle_file, 'wb') as f:
+        with open(src_subtitle_filepath, 'wb') as f:
             f.write(formatted_subtitles.encode("utf-8"))
             f.close()
 
-        if (not is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
+        if os.path.isfile(src_subtitle_filepath) and src_subtitle_filepath not in results:
+            results.append(src_subtitle_filepath)
+
+        if (not is_same_language(src, dst)) and (os.path.isfile(src_subtitle_filepath)) and (not os.path.isfile(cancel_file)):
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
-            translated_subtitle_file = subtitle_file[:-len(subtitle_format)-1] + '.translated.' + subtitle_format
+            dst_subtitle_filepath = f"{subtitle_folder_name + os.sep + media_file_display_name[:-len(media_file_format)-1]}.{dst}.{subtitle_format}"
 
             created_regions = []
             created_subtitles = []
@@ -843,71 +792,76 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
                 created_regions.append(entry[0])
                 created_subtitles.append(entry[1])
 
-            transcription_translator = TranscriptionTranslator(src=src, dest=dest)
-            translated_transcriptions = []
+            print("Translating subtitles...")
+            activity.runOnUiThread(appendText(textview_output_messages, "Translating subtitles...\n"))
+
+            transcription_translator = TranscriptionTranslator(src=src, dst=dst)
+
             translate_start_time = time.time()
+            pbar(0, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
 
-            print("Translating subtitles")
-            activity.runOnUiThread(appendText(textview_output_messages, "Translating subtitles\n"))
-
+            dst_transcriptions = []
             for i, translated_transcription in enumerate(pool.imap(transcription_translator, created_subtitles)):
 
                 if os.path.isfile(cancel_file):
                     os.remove(cancel_file)
                     pool.terminate()
                     pool.close()
-                    #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                     return
 
-                translated_transcriptions.append(translated_transcription)
+                dst_transcriptions.append(translated_transcription)
                 progress = int(i*100/len(created_subtitles))
 
-                pbar(progress, translate_start_time, 100, "Translating subtitles : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
-            pbar(100, translate_start_time, 100, "Translating subtitles : ", activity, textview_progress, progressBar, textview_percentage, textview_time)
+                pbar(progress, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+            pbar(100, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+            time.sleep(1)
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
-            timed_translated_subtitles = [(r, t) for r, t in zip(created_regions, translated_transcriptions) if t]
+            timed_translated_subtitles = [(r, t) for r, t in zip(created_regions, dst_transcriptions) if t]
             formatter = FORMATTERS.get(subtitle_format)
             formatted_translated_subtitles = formatter(timed_translated_subtitles)
 
             activity.runOnUiThread(appendText(textview_output_messages, "Writing temporary translatted subtitle files\n"))
 
-            with open(translated_subtitle_file, 'wb') as f:
+            with open(dst_subtitle_filepath, 'wb') as f:
                 f.write(formatted_translated_subtitles.encode("utf-8"))
 
+            if os.path.isfile(dst_subtitle_filepath) and dst_subtitle_filepath not in results:
+                results.append(dst_subtitle_filepath)
+
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
-            print('Temporary subtitles file created at            : {}'.format(subtitle_file))
-            print('Temporary translated subtitles file created at : {}'.format(translated_subtitle_file))
+            print('Temporary subtitles file created at            : {}'.format(src_subtitle_filepath))
+            print('Temporary translated subtitles file created at : {}'.format(dst_subtitle_filepath))
 
-            activity.runOnUiThread(setVisibility(textview_progress, progressBar, textview_percentage, textview_time, View.INVISIBLE))
+            activity.runOnUiThread(setVisibility(textview_progress, progress_bar, textview_percentage, textview_time, View.INVISIBLE))
+            activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
             activity.runOnUiThread(appendText(textview_output_messages, "Temporary subtitles file created at :\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, subtitle_file + "\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, src_subtitle_filepath + "\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
             activity.runOnUiThread(appendText(textview_output_messages, "Temporary translated subtitles file created at:\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, translated_subtitle_file + "\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, dst_subtitle_filepath + "\n"))
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
                 pool.terminate()
                 pool.close()
-                #activity.runOnUiThread(setText(textview_output_messages, "Process has been canceled"))
                 return
 
-        elif (is_same_language(src, dest)) and (os.path.isfile(subtitle_file)) and (not os.path.isfile(cancel_file)):
-            print("Temporary subtitles file created at      : {}".format(subtitle_file))
+        elif (is_same_language(src, dst)) and (os.path.isfile(src_subtitle_filepath)) and (not os.path.isfile(cancel_file)):
+            activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
+            print('Temporary subtitles file created at            : {}'.format(src_subtitle_filepath))
             activity.runOnUiThread(appendText(textview_output_messages, "\nTemporary subtitles file created at :\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, subtitle_file + "\n\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, src_subtitle_filepath + "\n\n"))
 
     pool.close()
     pool.join()
@@ -921,7 +875,7 @@ def transcribe(src, dest, filename, file_display_name, subtitle_format, activity
         #else:
             #shutil.rmtree(file_path)
 
-    return subtitle_file
+    return results
 
 
 class setText(static_proxy(None, Runnable)):
@@ -968,12 +922,6 @@ class setVisibility(static_proxy(None, Runnable)):
         self.textview_percentage.setVisibility(self.view)
         self.textview_time.setVisibility(self.view)
 
-
-'''
-def pbar(count_value, total, prefix, activity, textview_progress, progress_bar, textview_percentage, textview_time):
-    percentage = round(100.0*count_value/total, 1)
-    activity.runOnUiThread(mProgressBar(textview_progress, progress_bar, textview_percentage, int(percentage), 100, prefix))
-'''
 
 def pbar(count_value, start_time, total, prefix, activity, textview_progress, progress_bar, textview_percentage, textview_time):
     percentage = count_value

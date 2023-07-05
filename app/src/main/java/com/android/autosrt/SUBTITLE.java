@@ -5,9 +5,8 @@ import java.util.ArrayList;
 
 public class SUBTITLE {
     public static String FORMAT;
-    public static ArrayList<String> TMP_FILE_PATH_LIST;
-    public static ArrayList<String> TMP_TRANSLATED_FILE_PATH_LIST;
-    public static ArrayList<String> SAVED_FILE_PATH_LIST;
-    public static ArrayList<String> SAVED_TRANSLATED_FILE_PATH_LIST;
+    public static ArrayList<String> TMP_SAVED_FILE_PATH_LIST;
+    public static String TMP_SAVED_SRC_FILE_PATH;
+    public static String TMP_SAVED_DST_FILE_PATH;
     public static File[] SAVED_FILE;
 }

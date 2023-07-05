@@ -252,7 +252,7 @@
             />
         <TextView
             android:id="@+id/textview_grant_persisted_tree_uri_permission_notes"
-            android:text="@string/needed_for_saving_subtitle_files_into_same_folder_as_your_videos_audios_files"
+            android:text="@string/needed_for_saving_subtitle_files_into_same_folder_as_your_media_files"
             android:padding="0dp"
             android:gravity="center"
             android:textAlignment="gravity"

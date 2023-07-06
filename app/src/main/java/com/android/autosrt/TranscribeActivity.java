@@ -395,7 +395,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     }
                                                 }
 
-                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                                appendText(textview_output_messages_2, equalChars);
                                             }
                                         }
                                     }
@@ -423,9 +423,8 @@ public class TranscribeActivity extends AppCompatActivity {
                             long minutes = (totalSeconds % 3600) / 60;
                             long seconds = totalSeconds % 60;
                             formattedElapsedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-                            appendText(textview_output_messages_2, "Transcribe total time : " + formattedElapsedTime + "\n");
+                            appendText(textview_output_messages_2, "Total running time : " + formattedElapsedTime + "\n");
                             appendText(textview_output_messages_2, equalChars + "\n");
-
                         }
 
                     }
@@ -1128,6 +1127,18 @@ public class TranscribeActivity extends AppCompatActivity {
         textview_output_messages_2.setGravity(Gravity.START);
         textview_output_messages_2.scrollTo(0,0);
 
+        int lines = textview_output_messages_2.getLineCount();
+        Log.d("appendText", "lines = " + lines);
+        Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+        if (lines >= maxLinesOfOutputMessages) {
+            textview_output_messages_2.setGravity(Gravity.BOTTOM);
+            Log.d("appendText", "tv.getGravity() = BOTTOM");
+        }
+        else {
+            textview_output_messages_2.setGravity(Gravity.START);
+            Log.d("appendText", "tv.getGravity() = START");
+        }
+
         textview_output_messages_2.post(() -> {
             equalMaxChars = calculateMaxCharacterOccurrences(equalChars, textview_output_messages_2);
             dashMaxChars = calculateMaxCharacterOccurrences(dashChars, textview_output_messages_2);
@@ -1269,8 +1280,16 @@ public class TranscribeActivity extends AppCompatActivity {
 
     private void appendText(final TextView tv, final String text){
         runOnUiThread(() -> {
-            int lines = textview_output_messages_2.getLineCount();
-            if (lines >= maxLinesOfOutputMessages) textview_output_messages_2.setGravity(Gravity.BOTTOM);
+            int lines = tv.getLineCount();
+            Log.d("appendText", "lines = " + lines);
+            Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+            if (lines >= maxLinesOfOutputMessages) {
+                tv.setGravity(Gravity.BOTTOM);
+                Log.d("appendText", "tv.getGravity() = BOTTOM");
+            }
+            else {
+                Log.d("appendText", "tv.getGravity() = START");
+            }
             tv.append(text);
         });
     }

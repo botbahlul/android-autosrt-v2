@@ -28,6 +28,7 @@ import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -1848,6 +1849,21 @@ public class MainActivity extends AppCompatActivity {
             int lineHeight = textview_output_messages_1.getLineHeight();
             maxLinesOfOutputMessages = heightOfOutputMessages / lineHeight;
             Log.d("adjustOutputMessagesHeight", "textview_output_messages_1.maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+
+            textview_output_messages_1.setGravity(Gravity.START);
+            textview_output_messages_1.scrollTo(0, 0);
+
+            int lines = textview_output_messages_1.getLineCount();
+            Log.d("appendText", "lines = " + lines);
+            Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+            if (lines >= maxLinesOfOutputMessages) {
+                textview_output_messages_1.setGravity(Gravity.BOTTOM);
+                Log.d("appendText", "tv.getGravity() = BOTTOM");
+            }
+            else {
+                textview_output_messages_1.setGravity(Gravity.START);
+                Log.d("appendText", "tv.getGravity() = START");
+            }
         });
     }
 
@@ -1856,7 +1872,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendText(final TextView tv, final String text){
-        runOnUiThread(() -> tv.append(text));
+        runOnUiThread(() -> {
+            int lines = tv.getLineCount();
+            Log.d("appendText", "lines = " + lines);
+            Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+            if (lines >= maxLinesOfOutputMessages) {
+                tv.setGravity(Gravity.BOTTOM);
+                Log.d("appendText", "tv.getGravity() = BOTTOM");
+            }
+            else {
+                Log.d("appendText", "tv.getGravity() = START");
+            }
+            tv.append(text);
+        });
     }
 
 }

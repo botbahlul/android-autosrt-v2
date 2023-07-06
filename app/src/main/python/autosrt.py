@@ -716,7 +716,7 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
         activity.runOnUiThread(appendText(textview_output_messages, f"Creating '{src}' transcriptions...\n"))
 
         create_transcription_start_time = time.time()
-        pbar(0, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        pbar(0, create_transcription_start_time, 100, f"Creating '{src}' transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
 
         src_transcriptions = []
         for i, src_transcription in enumerate(pool.imap(recognizer, extracted_regions)):
@@ -731,11 +731,12 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
             src_transcriptions.append(src_transcription)
             progress = int(i*100/len(regions))
 
-            pbar(progress, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
-        pbar(100, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+            pbar(progress, create_transcription_start_time, 100, f"Creating '{src}' transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+        pbar(100, create_transcription_start_time, 100, f"Creating '{src}' transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
         time.sleep(1)
 
-        activity.runOnUiThread(appendText(textview_output_messages, "Transcriptions created\n"))
+        print(f"'{src}' transcriptions created")
+        activity.runOnUiThread(appendText(textview_output_messages, f"'{src}' transcriptions created\n"))
 
         if os.path.isfile(cancel_file):
             os.remove(cancel_file)
@@ -797,7 +798,7 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
             transcription_translator = TranscriptionTranslator(src=src, dst=dst)
 
             translate_start_time = time.time()
-            pbar(0, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+            pbar(0, translate_start_time, 100, f"Translating subtitles from '{src}' to '{dst}'", activity, textview_progress, progress_bar, textview_percentage, textview_time)
 
             dst_transcriptions = []
             for i, translated_transcription in enumerate(pool.imap(transcription_translator, created_subtitles)):
@@ -811,8 +812,8 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
                 dst_transcriptions.append(translated_transcription)
                 progress = int(i*100/len(created_subtitles))
 
-                pbar(progress, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
-            pbar(100, translate_start_time, 100, "Translating subtitles", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+                pbar(progress, translate_start_time, 100, f"Translating subtitles from '{src}' to '{dst}'", activity, textview_progress, progress_bar, textview_percentage, textview_time)
+            pbar(100, translate_start_time, 100, f"Translating subtitles from '{src}' to '{dst}'", activity, textview_progress, progress_bar, textview_percentage, textview_time)
             time.sleep(1)
 
             if os.path.isfile(cancel_file):

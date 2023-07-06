@@ -1128,15 +1128,15 @@ public class TranscribeActivity extends AppCompatActivity {
         textview_output_messages_2.scrollTo(0,0);
 
         int lines = textview_output_messages_2.getLineCount();
-        Log.d("appendText", "lines = " + lines);
-        Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
+        Log.d("adjustOutputMessagesHeight", "lines = " + lines);
+        Log.d("adjustOutputMessagesHeight", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
         if (lines >= maxLinesOfOutputMessages) {
             textview_output_messages_2.setGravity(Gravity.BOTTOM);
-            Log.d("appendText", "tv.getGravity() = BOTTOM");
+            Log.d("adjustOutputMessagesHeight", "tv.getGravity() = BOTTOM");
         }
         else {
             textview_output_messages_2.setGravity(Gravity.START);
-            Log.d("appendText", "tv.getGravity() = START");
+            Log.d("adjustOutputMessagesHeight", "tv.getGravity() = START");
         }
 
         textview_output_messages_2.post(() -> {

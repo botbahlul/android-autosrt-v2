@@ -198,6 +198,7 @@ public class TranscribeActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("DefaultLocale")
     private void transcribe() {
         if (threadTranscriber != null && threadTranscriber.isAlive()) threadTranscriber.interrupt();
         threadTranscriber = null;
@@ -290,11 +291,12 @@ public class TranscribeActivity extends AppCompatActivity {
                                 }
                             }
 
-                            for (int idx = 0; idx < SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size(); idx++) {
-                                Log.d("transcribe", "SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(" + idx + ") = " + SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(idx));
-                            }
-
                             if (SUBTITLE.TMP_SAVED_FILE_PATH_LIST != null) {
+
+                                for (int idx = 0; idx < SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size(); idx++) {
+                                    Log.d("transcribe", "SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(" + idx + ") = " + SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(idx));
+                                }
+
                                 SUBTITLE.TMP_SAVED_SRC_FILE_PATH = SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(0);
                                 Log.d("transcribe", "SUBTITLE.TMP_SAVED_SRC_FILE_PATH = " + SUBTITLE.TMP_SAVED_SRC_FILE_PATH);
 

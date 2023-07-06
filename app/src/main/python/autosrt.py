@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import absolute_import, print_function, unicode_literals
 import audioop
 import math
@@ -524,23 +523,23 @@ class MyStatisticsCallback(dynamic_proxy(StatisticsCallback)):
             pbar(100, self.start_time, 100, self.info, self.activity, self.textview_progress, self.progress_bar, self.textview_percentage, self.textview_time)
 
 
-def convert_to_wav(filePath, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time):
+def convert_to_wav(media_filepath, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time):
     channels=1
     rate=16000
     temp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    if not os.path.isfile(filePath):
-        print("The given file does not exist: {0}".format(filePath))
-        raise Exception("Invalid filepath: {0}".format(filePath))
+    if not os.path.isfile(media_filepath):
+        print(f"The given file does not exist: {media_filepath}")
+        raise Exception(f"Invalid filepath: {media_filepath}")
 
     Config.enableRedirection()
-    file = File(filePath)
+    file = File(media_filepath)
     fileUri = Uri.fromFile(file)
-    videoLength = MediaPlayer.create(activity, fileUri).getDuration()
-    print("videoLength = {}".format(videoLength))
+    media_duration = MediaPlayer.create(activity, fileUri).getDuration()
+    print(f"media_duration = {media_duration}")
     info = "Converting to WAV file"
-    Config.enableStatisticsCallback(MyStatisticsCallback(info, videoLength, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time))
+    Config.enableStatisticsCallback(MyStatisticsCallback(info, media_duration, start_time, activity, textview_progress, progress_bar, textview_percentage, textview_time))
 
-    FFmpeg.execute("-y -i " + "\"" + filePath + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"")
+    FFmpeg.execute("-y -i " + "\"" + media_filepath + "\"" + " -ac " + str(channels) + " -ar " + str(rate) + " " + "\"" + temp.name + "\"")
     return temp.name, rate
 
 
@@ -713,8 +712,8 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
             pool.close()
             return
 
-        print("Creating transcriptions...")
-        activity.runOnUiThread(appendText(textview_output_messages, "Creating transcriptions...\n"))
+        print(f"Creating '{src}' transcriptions...")
+        activity.runOnUiThread(appendText(textview_output_messages, f"Creating '{src}' transcriptions...\n"))
 
         create_transcription_start_time = time.time()
         pbar(0, create_transcription_start_time, 100, "Creating transcriptions", activity, textview_progress, progress_bar, textview_percentage, textview_time)
@@ -766,8 +765,8 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
             pool.close()
             return
 
-        print("Writing temporary subtitle files...")
-        activity.runOnUiThread(appendText(textview_output_messages, "Writing temporary subtitle files...\n"))
+        print(f"Writing temporary '{src}' subtitle files...")
+        activity.runOnUiThread(appendText(textview_output_messages, f"Writing temporary '{src}' subtitle files...\n"))
 
         with open(src_subtitle_filepath, 'wb') as f:
             f.write(formatted_subtitles.encode("utf-8"))
@@ -792,8 +791,8 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
                 created_regions.append(entry[0])
                 created_subtitles.append(entry[1])
 
-            print("Translating subtitles...")
-            activity.runOnUiThread(appendText(textview_output_messages, "Translating subtitles...\n"))
+            print(f"Translating subtitles from '{src}' to '{dst}'...")
+            activity.runOnUiThread(appendText(textview_output_messages, f"Translating subtitles from '{src}' to '{dst}'...\n"))
 
             transcription_translator = TranscriptionTranslator(src=src, dst=dst)
 
@@ -826,7 +825,7 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
             formatter = FORMATTERS.get(subtitle_format)
             formatted_translated_subtitles = formatter(timed_translated_subtitles)
 
-            activity.runOnUiThread(appendText(textview_output_messages, "Writing temporary translatted subtitle files\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, f"Writing temporary '{dst}' subtitle files\n"))
 
             with open(dst_subtitle_filepath, 'wb') as f:
                 f.write(formatted_translated_subtitles.encode("utf-8"))
@@ -840,16 +839,14 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
                 pool.close()
                 return
 
-            print('Temporary subtitles file created at            : {}'.format(src_subtitle_filepath))
-            print('Temporary translated subtitles file created at : {}'.format(dst_subtitle_filepath))
+            print(f"Temporary '{src}' subtitles file saved as : {src_subtitle_filepath}")
+            print(f"Temporary '{dst}' subtitles file saved as : {dst_subtitle_filepath}")
 
             activity.runOnUiThread(setVisibility(textview_progress, progress_bar, textview_percentage, textview_time, View.INVISIBLE))
             activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, "Temporary subtitles file created at :\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, src_subtitle_filepath + "\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, f"Temporary '{src}' subtitles file saved as :\n{src_subtitle_filepath}\n"))
             activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, "Temporary translated subtitles file created at:\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, dst_subtitle_filepath + "\n"))
+            activity.runOnUiThread(appendText(textview_output_messages, f"Temporary '{dst}' subtitles file saved as :\n{dst_subtitle_filepath}\n"))
 
             if os.path.isfile(cancel_file):
                 os.remove(cancel_file)
@@ -859,9 +856,8 @@ def transcribe(src, dst, media_filepath, media_file_display_name, subtitle_forma
 
         elif (is_same_language(src, dst)) and (os.path.isfile(src_subtitle_filepath)) and (not os.path.isfile(cancel_file)):
             activity.runOnUiThread(appendText(textview_output_messages, f"{dashChars}\n"))
-            print('Temporary subtitles file created at            : {}'.format(src_subtitle_filepath))
-            activity.runOnUiThread(appendText(textview_output_messages, "\nTemporary subtitles file created at :\n"))
-            activity.runOnUiThread(appendText(textview_output_messages, src_subtitle_filepath + "\n\n"))
+            print(f"Temporary '{src}' subtitles file saved as : {src_subtitle_filepath}")
+            activity.runOnUiThread(appendText(textview_output_messages, f"Temporary '{src}' subtitles file saved as :\n{src_subtitle_filepath}"))
 
     pool.close()
     pool.join()

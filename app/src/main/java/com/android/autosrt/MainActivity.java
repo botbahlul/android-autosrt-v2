@@ -983,7 +983,7 @@ public class MainActivity extends AppCompatActivity {
                 if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
                     appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
-                        appendText(textview_output_messages_1, FOLDER.SAVED_URI_LIST.get(i).toString() + "\n");
+                        appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                         Log.d("onRequestPermissionsResult", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                     }
                     if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size()>0) {
@@ -1087,7 +1087,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
                                     appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
                                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
-                                        appendText(textview_output_messages_1, FOLDER.SAVED_URI_LIST.get(i).toString() + "\n");
+                                        appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                         Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                                     }
                                     if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size() > 0) {
@@ -1132,7 +1132,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
                                     appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
                                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
-                                        appendText(textview_output_messages_1, FOLDER.SAVED_URI_LIST.get(i).toString() + "\n");
+                                        appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                         Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                                     }
                                     if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size()>0) {
@@ -1210,7 +1210,7 @@ public class MainActivity extends AppCompatActivity {
                                 boolean alreadySaved = false;
                                 for (int i = 0; i < FOLDER.SAVED_URI_LIST.size(); i++) {
                                     Log.d("startForRequestPersistedTreeUriPermissionActivity", "FOLDER.SAVED_URI_LIST.get(i) = " + FOLDER.SAVED_URI_LIST.get(i));
-                                    if (FOLDER.SAVED_URI_LIST.get(i) == treeUri) {
+                                    if (FOLDER.SAVED_URI_LIST.get(i).toString().equals(treeUri.toString())) {
                                         alreadySaved = true;
                                         Log.d("startForRequestPersistedTreeUriPermissionActivity", "alreadySaved = true");
                                     }
@@ -1607,7 +1607,7 @@ public class MainActivity extends AppCompatActivity {
                             if (FOLDER.SAVED_URI_LIST.size() > 0) {
                                 appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
                                 for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
-                                    appendText(textview_output_messages_1, FOLDER.SAVED_URI_LIST.get(i).toString() + "\n");
+                                    appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                     Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                                 }
                                 if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size()>0) {
@@ -1709,7 +1709,7 @@ public class MainActivity extends AppCompatActivity {
                             if (FOLDER.SAVED_URI_LIST.size() > 0) {
                                 appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
                                 for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
-                                    appendText(textview_output_messages_1, FOLDER.SAVED_URI_LIST.get(i).toString() + "\n");
+                                    appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                     Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                                 }
                                 if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size()>0) {

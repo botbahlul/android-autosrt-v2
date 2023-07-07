@@ -73,11 +73,14 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> arraylist_subtitle_formats = new ArrayList<>();
 
     Spinner spinner_src_languages;
+    public static CheckBox checkbox_embed_src_subtitle;
     @SuppressLint("StaticFieldLeak")
     public static CheckBox checkbox_create_translation;
     TextView textview_text2;
     Spinner spinner_dst_languages;
+    public static CheckBox checkbox_embed_dst_subtitle;
     Spinner spinner_subtitle_format;
+    public static CheckBox checkbox_force_recognize;
     TextView textview_filepath;
     Button button_browse;
     Button button_grant_storage_permission;
@@ -117,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_language_codes.add("ca");
         arraylist_src_language_codes.add("ceb");
         arraylist_src_language_codes.add("ny");
+        arraylist_src_language_codes.add("zh");
         arraylist_src_language_codes.add("zh-CN");
         arraylist_src_language_codes.add("zh-TW");
         arraylist_src_language_codes.add("co");
@@ -250,6 +254,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_src_languages.add("Catalan");
         arraylist_src_languages.add("Cebuano");
         arraylist_src_languages.add("Chichewa");
+        arraylist_src_languages.add("Chinese");
         arraylist_src_languages.add("Chinese (Simplified)");
         arraylist_src_languages.add("Chinese (Traditional)");
         arraylist_src_languages.add("Corsican");
@@ -387,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_language_codes.add("ca");
         arraylist_dst_language_codes.add("ceb");
         arraylist_dst_language_codes.add("ny");
+        arraylist_dst_language_codes.add("zh");
         arraylist_dst_language_codes.add("zh-CN");
         arraylist_dst_language_codes.add("zh-TW");
         arraylist_dst_language_codes.add("co");
@@ -520,6 +526,7 @@ public class MainActivity extends AppCompatActivity {
         arraylist_dst_languages.add("Catalan");
         arraylist_dst_languages.add("Cebuano");
         arraylist_dst_languages.add("Chichewa");
+        arraylist_dst_languages.add("Chinese");
         arraylist_dst_languages.add("Chinese (Simplified)");
         arraylist_dst_languages.add("Chinese (Traditional)");
         arraylist_dst_languages.add("Corsican");
@@ -648,16 +655,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         spinner_src_languages = findViewById(R.id.spinner_src_languages);
+        spinner_src_languages = findViewById(R.id.spinner_src_languages);
         setup_src_spinner(arraylist_src_languages);
+        checkbox_embed_src_subtitle = findViewById(R.id.checkbox_embed_src_subtitle);
 
         checkbox_create_translation = findViewById(R.id.checkbox_create_translation);
 
         textview_text2 = findViewById(R.id.textview_text2);
         spinner_dst_languages = findViewById(R.id.spinner_dst_languages);
         setup_dst_spinner(arraylist_dst_languages);
+        checkbox_embed_dst_subtitle = findViewById(R.id.checkbox_embed_dst_subtitle);
 
         spinner_subtitle_format = findViewById(R.id.spinner_subtitle_format);
         setup_subtitle_format(arraylist_subtitle_formats);
+        checkbox_force_recognize = findViewById(R.id.checkbox_force_recognize);
 
         textview_filepath = findViewById(R.id.textview_filepath);
 
@@ -742,8 +753,8 @@ public class MainActivity extends AppCompatActivity {
             if(((CompoundButton) view).isChecked()){
                 textview_text2.setVisibility(View.VISIBLE);
                 spinner_dst_languages.setVisibility(View.VISIBLE);
+                checkbox_embed_dst_subtitle.setVisibility(View.VISIBLE);
                 adjustOutputMessagesHeight();
-
                 spinner_dst_languages.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -764,11 +775,43 @@ public class MainActivity extends AppCompatActivity {
             else {
                 textview_text2.setVisibility(View.GONE);
                 spinner_dst_languages.setVisibility(View.GONE);
+                checkbox_embed_dst_subtitle.setVisibility(View.GONE);
                 adjustOutputMessagesHeight();
 
                 LANGUAGE.DST_LANGUAGE = LANGUAGE.SRC_LANGUAGE;
                 spinner_dst_languages.setSelection(arraylist_dst_languages.indexOf(LANGUAGE.DST_LANGUAGE));
                 LANGUAGE.DST_CODE = map_dst_languages.get(LANGUAGE.DST_LANGUAGE);
+            }
+        });
+
+
+        Log.d("onCreate", "checkbox_embed_src_subtitle.isChecked() = " + checkbox_embed_src_subtitle.isChecked());
+        checkbox_embed_src_subtitle.setOnClickListener(view -> {
+            if(((CompoundButton) view).isChecked()) {
+                EMBED.SRC = true;
+            }
+            else {
+                EMBED.SRC = false;
+            }
+        });
+
+        Log.d("onCreate", "checkbox_embed_dst_subtitle.isChecked() = " + checkbox_embed_dst_subtitle.isChecked());
+        checkbox_embed_dst_subtitle.setOnClickListener(view -> {
+            if(((CompoundButton) view).isChecked()) {
+                EMBED.DST = true;
+            }
+            else {
+                EMBED.DST = false;
+            }
+        });
+
+        Log.d("onCreate", "checkbox_force_recognize.isChecked() = " + checkbox_force_recognize.isChecked());
+        checkbox_force_recognize.setOnClickListener(view -> {
+            if(((CompoundButton) view).isChecked()) {
+                FORCE_RECOGNIZE_STATUS.IS_FORCED = true;
+            }
+            else {
+                FORCE_RECOGNIZE_STATUS.IS_FORCED = false;
             }
         });
 
@@ -795,7 +838,8 @@ public class MainActivity extends AppCompatActivity {
             MEDIA_FILE.PATH_LIST = new ArrayList<>();
             MEDIA_FILE.DISPLAY_NAME_LIST = null;
             MEDIA_FILE.DISPLAY_NAME_LIST = new ArrayList<>();
-            MEDIA_FILE.FORMAT = null;
+            SUBTITLE.TMP_SAVED_SRC_FILE_PATH = null;
+            SUBTITLE.TMP_SAVED_DST_FILE_PATH = null;
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -829,7 +873,8 @@ public class MainActivity extends AppCompatActivity {
                         intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
                         //startActivity(intent);
                         startForRequestManageAppAllFileAccessPermissionActivity.launch(intent);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         Log.e("Exception: ", Objects.requireNonNull(e.getMessage()));
                         e.printStackTrace();
                         Intent intent = new Intent();
@@ -896,7 +941,8 @@ public class MainActivity extends AppCompatActivity {
                     intent.addCategory("android.intent.category.DEFAULT");
                     intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
                     startForRequestManageAppAllFileAccessPermissionActivity.launch(intent);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     Log.e("Exception: ", Objects.requireNonNull(e.getMessage()));
                     e.printStackTrace();
                     Intent intent = new Intent();
@@ -946,11 +992,39 @@ public class MainActivity extends AppCompatActivity {
             Class.forName("dalvik.system.CloseGuard")
                     .getMethod("setEnabled", boolean.class)
                     .invoke(null, true);
-        } catch (ReflectiveOperationException e) {
+        }
+        catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
 
+
+        if (checkbox_embed_src_subtitle.isChecked()) {
+            EMBED.SRC = true;
+        }
+        else {
+            EMBED.SRC = false;
+        }
+
+        if (checkbox_embed_dst_subtitle.isChecked()) {
+            EMBED.DST = true;
+        }
+        else {
+            EMBED.DST = false;
+        }
+
+        if (checkbox_force_recognize.isChecked()) {
+            FORCE_RECOGNIZE_STATUS.IS_FORCED = true;
+        }
+        else {
+            FORCE_RECOGNIZE_STATUS.IS_FORCED = false;
+        }
+
+        Log.d("onCreate", "embed_src_subtitle = " + EMBED.SRC);
+        Log.d("onCreate", "embed_src_subtitle = " + EMBED.DST);
+        Log.d("onCreate", "force_recognize = " + FORCE_RECOGNIZE_STATUS.IS_FORCED);
+
     }
+
 
     @Override
     protected void onDestroy(){
@@ -966,6 +1040,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -976,12 +1051,12 @@ public class MainActivity extends AppCompatActivity {
                 button_grant_storage_permission.setVisibility(View.GONE);
                 textview_grant_storage_permission_notes.setVisibility(View.GONE);
                 adjustOutputMessagesHeight();
-                setText(textview_output_messages_1, "Storage permission is granted\n");
+                setText(textview_output_messages_1, "Storage permission is granted.\n");
 
                 FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
                 Log.d("onRequestPermissionsResult", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
-                if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
-                    appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
+                if (FOLDER.SAVED_URI_LIST.size() > 0) {
+                    appendText(textview_output_messages_1, "Persisted tree uri permission currently is granted for folders :\n");
                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                         appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                         Log.d("onRequestPermissionsResult", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
@@ -1006,16 +1081,16 @@ public class MainActivity extends AppCompatActivity {
                         if (Environment.isExternalStorageManager()) {
                             button_grant_manage_app_all_files_access_permission.setVisibility(View.GONE);
                             textview_grant_manage_app_all_files_access_permission_notes.setVisibility(View.GONE);
-                            adjustOutputMessagesHeight();
                             appendText(textview_output_messages_1, "Manage app all files access permission is granted.\n");
                             appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
+                            adjustOutputMessagesHeight();
                         }
                         else {
                             button_grant_manage_app_all_files_access_permission.setVisibility(View.VISIBLE);
                             textview_grant_manage_app_all_files_access_permission_notes.setVisibility(View.VISIBLE);
-                            adjustOutputMessagesHeight();
                             appendText(textview_output_messages_1, "Manage app all files access permission is not granted.\n");
                             appendText(textview_output_messages_1, "All subtitle files will always be saved as new files into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
+                            adjustOutputMessagesHeight();
                         }
                     }
                     else {
@@ -1023,14 +1098,15 @@ public class MainActivity extends AppCompatActivity {
                         textview_grant_manage_app_all_files_access_permission_notes.setVisibility(View.GONE);
                         adjustOutputMessagesHeight();
                         appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
+                        adjustOutputMessagesHeight();
                     }
                 }
             }
             else {
                 button_grant_storage_permission.setVisibility(View.VISIBLE);
                 textview_grant_storage_permission_notes.setVisibility(View.VISIBLE);
-                adjustOutputMessagesHeight();
                 setText(textview_output_messages_1, "Storage permission is not granted, this app won't work.");
+                adjustOutputMessagesHeight();
             }
             //Toast.makeText(MainActivity.this, m1 + m2 + m3, Toast.LENGTH_SHORT).show();
         }
@@ -1084,13 +1160,13 @@ public class MainActivity extends AppCompatActivity {
 
                                 FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
                                 Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
-                                if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
-                                    appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
+                                if (FOLDER.SAVED_URI_LIST.size() > 0) {
+                                    appendText(textview_output_messages_1, "Persisted tree uri permission currently is granted for folders :\n");
                                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                                         appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                         Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
                                     }
-                                    if (MEDIA_FILE.PATH_LIST != null && MEDIA_FILE.PATH_LIST.size() > 0) {
+                                    if (MEDIA_FILE.PATH_LIST.size()>0) {
                                         if (isTreeUriPermissionGrantedForDirPathOfFilePath(MEDIA_FILE.PATH_LIST.get(0))) {
                                             setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
@@ -1129,8 +1205,8 @@ public class MainActivity extends AppCompatActivity {
 
                                 FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
                                 Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
-                                if (FOLDER.SAVED_URI_LIST != null && FOLDER.SAVED_URI_LIST.size() > 0) {
-                                    appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
+                                if (FOLDER.SAVED_URI_LIST.size() > 0) {
+                                    appendText(textview_output_messages_1, "Persisted tree uri permission currently is granted for folders :\n");
                                     for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                                         appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                         Log.d("startForRequestManageAppAllFileAccessPermissionActivity", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
@@ -1142,7 +1218,7 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                         else {
                                             setText(textview_output_messages_1, "Persisted tree uri permission request is not granted for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
-                                            appendText(textview_output_messages_1, "All subtitle files will always be saved as new files into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
+                                            appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                         }
                                     }
                                     else {
@@ -1151,7 +1227,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                                 else {
                                     appendText(textview_output_messages_1, "Persisted tree uri permission is not granted for any folders.\n");
-                                    appendText(textview_output_messages_1, "All subtitle files will always be saved as new files into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
+                                    appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                 }
                             }
                             else {
@@ -1193,14 +1269,15 @@ public class MainActivity extends AppCompatActivity {
                                         try {
                                             testWrite(uriFile);
                                             if (dfFile.exists() && dfFile.delete()) {
-                                                appendText(textview_output_messages_1, "Write test succeed\n");
+                                                appendText(textview_output_messages_1, "Write test succeed.\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + TreeUri2Path(treeUri));
                                             }
-                                        } catch (FileNotFoundException e) {
+                                        }
+                                        catch (FileNotFoundException e) {
                                             throw new RuntimeException(e);
                                         }
                                     }
-									else {
+                                    else {
                                         Log.d("startForRequestPersistedTreeUriPermissionActivity", "File is not exist or cannot write dfFile");
                                         setText(textview_output_messages_1, "Write test error!");
                                     }
@@ -1292,12 +1369,12 @@ public class MainActivity extends AppCompatActivity {
                                                     setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                     appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 }
-												else {
+                                                else {
                                                     setText(textview_output_messages_1, "Persisted tree uri permission request has not been granted yet for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                     appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                                 }
                                             }
-											else {
+                                            else {
                                                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
                                                 requestTreeUriPermissions();
                                                 setText(textview_output_messages_1, "Storage permission is not granted, this app won't work");
@@ -1318,12 +1395,12 @@ public class MainActivity extends AppCompatActivity {
                                                     setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                     appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 }
-												else {
+                                                else {
                                                     setText(textview_output_messages_1, "Persisted tree uri permission request has not been granted yet for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                     appendText(textview_output_messages_1, "All subtitle files will always be saved as new files into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                                 }
                                             }
-											else {
+                                            else {
                                                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
                                                 if (i==0) requestTreeUriPermissions();
                                                 setText(textview_output_messages_1, "Storage permission is not granted, this app won't work");
@@ -1340,12 +1417,12 @@ public class MainActivity extends AppCompatActivity {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             }
-											else {
+                                            else {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission request has not been granted yet for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                             }
                                         }
-										else {
+                                        else {
                                             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
                                             if (i==0) requestTreeUriPermissions();
                                             setText(textview_output_messages_1, "Storage permission is not granted, this app won't work");
@@ -1393,7 +1470,7 @@ public class MainActivity extends AppCompatActivity {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             }
-											else {
+                                            else {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission request is not granted for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                             }
@@ -1410,7 +1487,7 @@ public class MainActivity extends AppCompatActivity {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will be saved into " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             }
-											else {
+                                            else {
                                                 setText(textview_output_messages_1, "Persisted tree uri permission request is not granted for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                                 appendText(textview_output_messages_1, "All subtitle files will always be saved as new files into :\n/storage/emulated/0/" + DIRECTORY_DOCUMENTS + "/com.android.autosrt/");
                                             }
@@ -1428,7 +1505,7 @@ public class MainActivity extends AppCompatActivity {
                                             setText(textview_output_messages_1, "Persisted tree uri permission is granted for :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                         }
-										else {
+                                        else {
                                             setText(textview_output_messages_1, "Persisted tree uri permission request is not granted for " + new File(MEDIA_FILE.PATH_LIST.get(0)).getParent() + "\n");
                                             appendText(textview_output_messages_1, "All subtitle files will be saved into :\n" + Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS).toString() + ".");
                                         }
@@ -1479,7 +1556,7 @@ public class MainActivity extends AppCompatActivity {
                     "com.android.externalstorage.documents",
                     folder.getAbsolutePath().substring(1));
         }
-		else {
+        else {
             uri = Uri.fromFile(folder);
         }
         return uri;
@@ -1499,7 +1576,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d("TreeUri2Path", "fullPath = " + fullPath);
             return fullPath;
         }
-		else {
+        else {
             return null;
         }
     }
@@ -1528,7 +1605,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("Uri2Path", "fullPath = " + fullPath);
                     return fullPath;
                 }
-				else {
+                else {
                     return null;
                 }
             }
@@ -1554,9 +1631,11 @@ public class MainActivity extends AppCompatActivity {
                         int idx = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA);
                         Log.d("Uri2Path", "cursor.getString(idx) = " + cursor.getString(idx));
                         return cursor.getString(idx);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         e.printStackTrace();
-                    } finally {
+                    }
+                    finally {
                         cursor.close();
                     }
                 }
@@ -1588,6 +1667,13 @@ public class MainActivity extends AppCompatActivity {
         return fullPath;
     }
 
+
+    private static boolean fileExists(String filePath) {
+        File file = new File(filePath);
+        return file.exists();
+    }
+
+
     private void requestTreeUriPermissions() {
         // Choose a directory using the system's file picker.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -1605,7 +1691,7 @@ public class MainActivity extends AppCompatActivity {
                             FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
                             Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
                             if (FOLDER.SAVED_URI_LIST.size() > 0) {
-                                appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
+                                appendText(textview_output_messages_1, "Persisted tree uri permission currently is granted for folders :\n");
                                 for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                                     appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                     Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
@@ -1707,7 +1793,7 @@ public class MainActivity extends AppCompatActivity {
                             FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
                             Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
                             if (FOLDER.SAVED_URI_LIST.size() > 0) {
-                                appendText(textview_output_messages_1, "Persisted tree uri permission is granted for folders :\n");
+                                appendText(textview_output_messages_1, "Persisted tree uri permission currently is granted for folders :\n");
                                 for (int i=0; i<FOLDER.SAVED_URI_LIST.size(); i++) {
                                     appendText(textview_output_messages_1, TreeUri2Path(FOLDER.SAVED_URI_LIST.get(i)) + "\n");
                                     Log.d("requestTreeUriPermissions", "FOLDER.SAVED_URI_LIST.get(" + i + ") = " + FOLDER.SAVED_URI_LIST.get(i));
@@ -1777,7 +1863,8 @@ public class MainActivity extends AppCompatActivity {
         Thread netThread = new Thread(() -> {
             try {
                 ipAddr[0] = InetAddress.getByName("www.google.com");
-            } catch (UnknownHostException e) {
+            }
+            catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
             Log.d("isInternetAvailable", "ipAddr = " + ipAddr[0]);
@@ -1791,7 +1878,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             InetAddress[] ipAddr = checkGoogleHost();
             return !Arrays.toString(ipAddr).equals("");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return false;
         }
     }
@@ -1897,19 +1985,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendText(final TextView tv, final String text){
-        runOnUiThread(() -> {
-            int lines = tv.getLineCount();
-            Log.d("appendText", "lines = " + lines);
-            Log.d("appendText", "maxLinesOfOutputMessages = " + maxLinesOfOutputMessages);
-            if (lines >= maxLinesOfOutputMessages) {
-                tv.setGravity(Gravity.BOTTOM);
-                Log.d("appendText", "tv.getGravity() = BOTTOM");
-            }
-            else {
-                Log.d("appendText", "tv.getGravity() = START");
-            }
-            tv.append(text);
-        });
+        runOnUiThread(() -> tv.append(text));
     }
 
 }

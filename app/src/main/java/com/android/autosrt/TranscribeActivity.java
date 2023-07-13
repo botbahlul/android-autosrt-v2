@@ -276,10 +276,10 @@ public class TranscribeActivity extends AppCompatActivity {
                             String subtitleFolderDisplayName = StringUtils.substring(MEDIA_FILE.DISPLAY_NAME_LIST.get(i), 0, MEDIA_FILE.DISPLAY_NAME_LIST.get(i).length() - MEDIA_FILE.FORMAT.length() - 1);
                             Log.d("transcribe", "subtitleFolderDisplayName = " + subtitleFolderDisplayName);
 
-                            setText(textview_current_file, "Processing file : " + MEDIA_FILE.DISPLAY_NAME_LIST.get(i));
+                            setText(textview_current_file, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "'");
                             int finalI = i;
                             textview_output_messages_2.post(() -> {
-                                appendText(textview_output_messages_2, "Processing file : " + MEDIA_FILE.DISPLAY_NAME_LIST.get(finalI) + "\n");
+                                appendText(textview_output_messages_2, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(finalI) + "'\n");
                                 appendText(textview_output_messages_2, equalChars + "\n");
                             });
 
@@ -355,7 +355,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                         SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToDocumentsDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, subtitleFolderDisplayName);
                                         Log.d("transcribe", "SUBTITLE.SAVED_FILE[" + i + "] = " + SUBTITLE.SAVED_FILE[i]);
 
-                                        if (new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                        if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
                                             Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToDocumentsDir()");
                                             SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToDocumentsDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, subtitleFolderDisplayName);
                                             Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
@@ -364,7 +364,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                         if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
                                             Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
                                             appendText(textview_output_messages_2, equalChars + "\n");
-                                            appendText(textview_output_messages_2, "Overall results for " + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + " : \n");
+                                            appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
                                             appendText(textview_output_messages_2, equalChars + "\n");
                                             appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
@@ -376,7 +376,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
                                                 }
                                             }
-                                            if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                            if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                                 appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                             }
@@ -406,7 +406,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                             Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
                                             SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToSelectedDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, FOLDER.URI);
 
-                                            if (new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                            if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
                                                 Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToSelectedDir()");
                                                 SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToSelectedDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, FOLDER.URI);
                                                 Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
@@ -415,7 +415,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                             if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
                                                 Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
                                                 appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, "Overall results for " + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + " : \n");
+                                                appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
                                                 appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i].toString() + "\n");
 
                                                 if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
@@ -426,7 +426,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     }
                                                 }
 
-                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
                                                     appendText(textview_output_messages_2, equalChars + "\n");
                                                     appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                                 }
@@ -441,7 +441,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                             SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToDocumentsDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, subtitleFolderDisplayName);
                                             Log.d("transcribe", "SUBTITLE.SAVED_FILE[" + i + "] = " + SUBTITLE.SAVED_FILE[i]);
 
-                                            if (new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                            if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
                                                 Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToDocumentsDir()");
                                                 SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToDocumentsDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, subtitleFolderDisplayName);
                                                 Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
@@ -450,7 +450,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                             if (new File(SUBTITLE.SAVED_FILE[i].toString()).exists() && new File(SUBTITLE.SAVED_FILE[i].toString()).length() > 1) {
                                                 Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
                                                 appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, "Overall results for " + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + " : \n");
+                                                appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
                                                 appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
                                                 if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
@@ -461,7 +461,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     }
                                                 }
 
-                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
                                                     appendText(textview_output_messages_2, equalChars + "\n");
                                                     appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                                 }

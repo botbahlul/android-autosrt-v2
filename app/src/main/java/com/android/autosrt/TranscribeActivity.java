@@ -416,12 +416,14 @@ public class TranscribeActivity extends AppCompatActivity {
                                                 Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                                 appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
-                                                appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i].toString() + "\n");
+                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                                appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
                                                 if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
                                                     String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
                                                     Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
                                                     if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
+                                                        appendText(textview_output_messages_2, equalChars + "\n");
                                                         appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
                                                     }
                                                 }
@@ -430,7 +432,6 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     appendText(textview_output_messages_2, equalChars + "\n");
                                                     appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                                 }
-
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                             }
 
@@ -451,12 +452,14 @@ public class TranscribeActivity extends AppCompatActivity {
                                                 Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                                 appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
+                                                appendText(textview_output_messages_2, equalChars + "\n");
                                                 appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
                                                 if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
                                                     String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
                                                     Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
                                                     if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
+                                                        appendText(textview_output_messages_2, equalChars + "\n");
                                                         appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
                                                     }
                                                 }
@@ -465,7 +468,6 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     appendText(textview_output_messages_2, equalChars + "\n");
                                                     appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                                 }
-
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                             }
                                         }
@@ -1468,13 +1470,13 @@ public class TranscribeActivity extends AppCompatActivity {
             Log.d("adjustOutputMessagesHeight", "dashMaxChars = " + dashMaxChars);
             if (equalMaxChars > 0) {
                 equalChars = StringUtils.repeat('=', equalMaxChars - 2);
-                Log.d("adjustOutputMessagesHeight", "equalChars = " + equalChars);
+                //Log.d("adjustOutputMessagesHeight", "equalChars = " + equalChars);
                 Log.d("adjustOutputMessagesHeight", "equalChars.length() = " + equalChars.length());
                 storeStringToFile(TranscribeActivity.this, equalChars, "equalChars");
             }
             if (dashMaxChars > 0) {
                 dashChars = StringUtils.repeat('-', dashMaxChars - 4);
-                Log.d("adjustOutputMessagesHeight", "dashChars = " + dashChars);
+                //Log.d("adjustOutputMessagesHeight", "dashChars = " + dashChars);
                 Log.d("adjustOutputMessagesHeight", "dashChars.length() = " + dashChars.length());
                 storeStringToFile(TranscribeActivity.this, dashChars, "dashChars");
             }
@@ -1586,7 +1588,7 @@ public class TranscribeActivity extends AppCompatActivity {
             int b = fileInputStream.read(buffer);
             Log.d("readStringFromFile", "b = " + b);
             fileInputStream.close();
-            Log.d("readStringFromFile", "new String(buffer) = " + new String(buffer));
+            //Log.d("readStringFromFile", "new String(buffer) = " + new String(buffer));
             return new String(buffer);
         }
         catch (IOException e) {

@@ -205,6 +205,8 @@ public class TranscribeActivity extends AppCompatActivity {
         if (threadTranscriber != null && threadTranscriber.isAlive()) threadTranscriber.interrupt();
     }
 
+
+    @SuppressLint("DefaultLocale")
     private void transcribe() {
         if (threadTranscriber != null && threadTranscriber.isAlive()) threadTranscriber.interrupt();
         threadTranscriber = null;
@@ -220,136 +222,206 @@ public class TranscribeActivity extends AppCompatActivity {
                     transcribeStartTime = System.currentTimeMillis();
                     Log.d("transcribe", "transcribeStartTime = " + transcribeStartTime);
 
-                    try {
+                    if (!Python.isStarted()) {
+                        Python.start(new AndroidPlatform(TranscribeActivity.this));
+                        py = Python.getInstance();
+                    }
+
+                    if (MEDIA_FILE.PATH_LIST == null) {
+                        threadTranscriber.interrupt();
+                        threadTranscriber = null;
+                        transcribe();
+                    }
+
+                    SUBTITLE.SAVED_FILE = new File[MEDIA_FILE.URI_LIST.size()];
+                    SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST = new File[MEDIA_FILE.URI_LIST.size()];
+
+                    EMBED.SRC = MainActivity.checkbox_embed_src_subtitle.isChecked();
+                    EMBED.DST = MainActivity.checkbox_embed_dst_subtitle.isChecked();
+                    FORCE_RECOGNIZE_STATUS.IS_FORCED = MainActivity.checkbox_force_recognize.isChecked();
+
+                    Log.d("transcribe", "embed_src_subtitle = " + EMBED.SRC);
+                    Log.d("transcribe", "embed_src_subtitle = " + EMBED.DST);
+                    Log.d("transcribe", "force_recognize = " + FORCE_RECOGNIZE_STATUS.IS_FORCED);
+
+                    runOnUiThread(() -> {
+                        setText(textview_output_messages_2, "");
+                        equalChars = readStringFromFile(TranscribeActivity.this, "equalChars");
+                        Log.d("transcribe", "equalChars.length() = " + equalChars.length());
+                        appendText(textview_output_messages_2, equalChars + "\n");
+                    });
+
+                    for (int i = 0; i< MEDIA_FILE.URI_LIST.size(); i++) {
+                        if (!TRANSCRIBE_STATUS.IS_TRANSCRIBING) return;
+
+                        SUBTITLE.TMP_SAVED_FILE_PATH_LIST = new ArrayList<>();
+                        SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH = null;
+
+                        MEDIA_FILE.FORMAT = MEDIA_FILE.PATH_LIST.get(i).substring(MEDIA_FILE.PATH_LIST.get(i).lastIndexOf(".") + 1);
+                        String subtitleFolderDisplayName = StringUtils.substring(MEDIA_FILE.DISPLAY_NAME_LIST.get(i), 0, MEDIA_FILE.DISPLAY_NAME_LIST.get(i).length() - MEDIA_FILE.FORMAT.length() - 1);
+                        Log.d("transcribe", "subtitleFolderDisplayName = " + subtitleFolderDisplayName);
+
+                        setText(textview_current_file, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "'");
+                        int finalI = i;
+                        textview_output_messages_2.post(() -> {
+                            appendText(textview_output_messages_2, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(finalI) + "'\n");
+                            appendText(textview_output_messages_2, equalChars + "\n");
+                        });
+
                         if (!Python.isStarted()) {
                             Python.start(new AndroidPlatform(TranscribeActivity.this));
                             py = Python.getInstance();
                         }
 
-                        if (MEDIA_FILE.PATH_LIST == null) {
-                            threadTranscriber.interrupt();
-                            threadTranscriber = null;
-                            transcribe();
+                        pyObjTmpResults = py.getModule("autosrt").callAttr(
+                                "transcribe",
+                                LANGUAGE.SRC_CODE,
+                                LANGUAGE.DST_CODE,
+                                MEDIA_FILE.PATH_LIST.get(i),
+                                MEDIA_FILE.DISPLAY_NAME_LIST.get(i),
+                                SUBTITLE.FORMAT,
+                                EMBED.SRC,
+                                EMBED.DST,
+                                FORCE_RECOGNIZE_STATUS.IS_FORCED,
+                                TranscribeActivity.this,
+                                textview_output_messages_2,
+                                textview_progress,
+                                progressBar,
+                                textview_percentage,
+                                textview_time
+                        );
+
+                        Log.d("transcribe", "pyObjTmpResults = " + pyObjTmpResults);
+
+                        // Extract pyObjTmpResults tuple
+                        if (pyObjTmpResults != null) {
+
+                            String extension;
+                            List<PyObject> tupleTmpResults = new ArrayList<>(pyObjTmpResults.asList());
+
+                            for (int idx = 0; idx < tupleTmpResults.size(); idx++) {
+                                Log.d("transcribe", "tupleTmpResults.get(" + idx + ") = " + tupleTmpResults.get(idx));
+
+                                extension = tupleTmpResults.get(idx).toString().substring(tupleTmpResults.get(idx).toString().lastIndexOf(".") + 1);
+                                Log.d("transcribe", "extension = " + extension);
+
+                                if (extension.equals("srt") || extension.equals("vtt") || extension.equals("json") || extension.equals("raw")) {
+                                    SUBTITLE.TMP_SAVED_FILE_PATH_LIST.add(tupleTmpResults.get(idx).toString());
+                                }
+                                else {
+                                    SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH = tupleTmpResults.get(idx).toString();
+                                }
+                            }
                         }
 
-                        SUBTITLE.SAVED_FILE = new File[MEDIA_FILE.URI_LIST.size()];
-                        SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST = new File[MEDIA_FILE.URI_LIST.size()];
-
-                        if (MainActivity.checkbox_embed_src_subtitle.isChecked()) {
-                            EMBED.SRC = true;
-                        }
-                        else {
-                            EMBED.SRC = false;
+                        for (int idx = 0; idx < SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size(); idx++) {
+                            Log.d("transcribe", "SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(" + idx + ") = " + SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(idx));
                         }
 
-                        if (MainActivity.checkbox_embed_dst_subtitle.isChecked()) {
-                            EMBED.DST = true;
-                        }
-                        else {
-                            EMBED.DST = false;
-                        }
+                        Log.d("transcribe", "SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH = " + SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH);
 
-                        if (MainActivity.checkbox_force_recognize.isChecked()) {
-                            FORCE_RECOGNIZE_STATUS.IS_FORCED = true;
-                        }
-                        else {
-                            FORCE_RECOGNIZE_STATUS.IS_FORCED = false;
-                        }
+                        if (SUBTITLE.TMP_SAVED_FILE_PATH_LIST != null) {
+                            SUBTITLE.TMP_SAVED_SRC_FILE_PATH = SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(0);
+                            Log.d("transcribe", "SUBTITLE.TMP_SAVED_SRC_FILE_PATH = " + SUBTITLE.TMP_SAVED_SRC_FILE_PATH);
 
-                        Log.d("transcribe", "embed_src_subtitle = " + EMBED.SRC);
-                        Log.d("transcribe", "embed_src_subtitle = " + EMBED.DST);
-                        Log.d("transcribe", "force_recognize = " + FORCE_RECOGNIZE_STATUS.IS_FORCED);
-
-                        runOnUiThread(() -> {
-                            setText(textview_output_messages_2, "");
-                            equalChars = readStringFromFile(TranscribeActivity.this, "equalChars");
-                            Log.d("transcribe", "equalChars.length() = " + equalChars.length());
-                            appendText(textview_output_messages_2, equalChars + "\n");
-                        });
-
-                        for (int i = 0; i< MEDIA_FILE.URI_LIST.size(); i++) {
-                            if (!TRANSCRIBE_STATUS.IS_TRANSCRIBING) return;
-
-                            SUBTITLE.TMP_SAVED_FILE_PATH_LIST = new ArrayList<>();
-
-                            MEDIA_FILE.FORMAT = MEDIA_FILE.PATH_LIST.get(i).substring(MEDIA_FILE.PATH_LIST.get(i).lastIndexOf(".") + 1);
-                            String subtitleFolderDisplayName = StringUtils.substring(MEDIA_FILE.DISPLAY_NAME_LIST.get(i), 0, MEDIA_FILE.DISPLAY_NAME_LIST.get(i).length() - MEDIA_FILE.FORMAT.length() - 1);
-                            Log.d("transcribe", "subtitleFolderDisplayName = " + subtitleFolderDisplayName);
-
-                            setText(textview_current_file, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "'");
-                            int finalI = i;
-                            textview_output_messages_2.post(() -> {
-                                appendText(textview_output_messages_2, "Processing file : '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(finalI) + "'\n");
-                                appendText(textview_output_messages_2, equalChars + "\n");
-                            });
-
-                            if (!Python.isStarted()) {
-                                Python.start(new AndroidPlatform(TranscribeActivity.this));
-                                py = Python.getInstance();
+                            if (SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size() == 2 && SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(1) != null) {
+                                SUBTITLE.TMP_SAVED_DST_FILE_PATH = SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(1);
+                                Log.d("transcribe", "SUBTITLE.TMP_SAVED_DST_FILE_PATH = " + SUBTITLE.TMP_SAVED_DST_FILE_PATH);
                             }
 
-                            pyObjTmpResults = py.getModule("autosrt").callAttr(
-                                    "transcribe",
-                                    LANGUAGE.SRC_CODE,
-                                    LANGUAGE.DST_CODE,
-                                    MEDIA_FILE.PATH_LIST.get(i),
-                                    MEDIA_FILE.DISPLAY_NAME_LIST.get(i),
-                                    SUBTITLE.FORMAT,
-                                    EMBED.SRC,
-                                    EMBED.DST,
-                                    FORCE_RECOGNIZE_STATUS.IS_FORCED,
-                                    TranscribeActivity.this,
-                                    textview_output_messages_2,
-                                    textview_progress,
-                                    progressBar,
-                                    textview_percentage,
-                                    textview_time
-                            );
+                            Log.d("transcribe", "new File(tmpSrcSubtitleFilePath).exists() = " + new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).exists());
+                            Log.d("transcribe", "new File(tmpSrcSubtitleFilePath).length() = " + new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).length());
 
-                            Log.d("transcribe", "pyObjTmpResults = " + pyObjTmpResults);
+                            if (new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).exists() && new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).length() > 1) {
+                                FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
+                                if (FOLDER.SAVED_URI_LIST.size() == 0) {
 
-                            // Extract pyObjTmpResults tuple
-                            if (pyObjTmpResults != null) {
+                                    Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToDocumentsDir()");
+                                    SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToDocumentsDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, subtitleFolderDisplayName);
+                                    Log.d("transcribe", "SUBTITLE.SAVED_FILE[" + i + "] = " + SUBTITLE.SAVED_FILE[i]);
 
-                                String extension;
-                                List<PyObject> tupleTmpResults = new ArrayList<>(pyObjTmpResults.asList());
+                                    if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                        Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToDocumentsDir()");
+                                        SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToDocumentsDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, subtitleFolderDisplayName);
+                                        Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
+                                    }
 
-                                for (int idx = 0; idx < tupleTmpResults.size(); idx++) {
-                                    Log.d("transcribe", "tupleTmpResults.get(" + idx + ") = " + tupleTmpResults.get(idx));
+                                    if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
+                                        Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
+                                        appendText(textview_output_messages_2, equalChars + "\n");
+                                        appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
+                                        appendText(textview_output_messages_2, equalChars + "\n");
+                                        appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
-                                    extension = tupleTmpResults.get(idx).toString().substring(tupleTmpResults.get(idx).toString().lastIndexOf(".") + 1);
-                                    Log.d("transcribe", "extension = " + extension);
+                                        if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
+                                            String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
+                                            Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
+                                            if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
+                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                                appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
+                                            }
+                                        }
+                                        if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                            appendText(textview_output_messages_2, equalChars + "\n");
+                                            appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
+                                        }
+                                        appendText(textview_output_messages_2, equalChars + "\n");
+                                    }
 
-                                    if (extension.equals("srt") || extension.equals("vtt") || extension.equals("json") || extension.equals("raw")) {
-                                        SUBTITLE.TMP_SAVED_FILE_PATH_LIST.add(tupleTmpResults.get(idx).toString());
+                                }
+                                else {
+                                    Log.d("transcribe", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
+                                    Uri dirUri = getFolderUri(FOLDER.PATH);
+                                    Log.d("transcribe", "dirUri = " + dirUri);
+
+                                    int j=0;
+                                    for (Uri savedTreeUri : FOLDER.SAVED_URI_LIST) {
+                                        Log.d("transcribe", "savedTreeUri[" + j + "] = " + savedTreeUri);
+                                        if (dirUri.getLastPathSegment().contains(savedTreeUri.getLastPathSegment())) {
+                                            FOLDER.URI = savedTreeUri;
+                                            Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
+                                        }
+                                        j+=1;
+                                    }
+
+                                    boolean alreadySaved = isTreeUriPermissionGrantedForDirPathOfFilePath(MEDIA_FILE.PATH_LIST.get(i));
+                                    if (alreadySaved) {
+
+                                        Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToSelectedDir()");
+                                        Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
+                                        SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToSelectedDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, FOLDER.URI);
+
+                                        if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                            Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToSelectedDir()");
+                                            SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToSelectedDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, FOLDER.URI);
+                                            Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
+                                        }
+
+                                        if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
+                                            Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
+                                            appendText(textview_output_messages_2, equalChars + "\n");
+                                            appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
+                                            appendText(textview_output_messages_2, equalChars + "\n");
+                                            appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
+
+                                            if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
+                                                String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
+                                                Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
+                                                if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
+                                                    appendText(textview_output_messages_2, equalChars + "\n");
+                                                    appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
+                                                }
+                                            }
+
+                                            if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                                appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
+                                            }
+                                            appendText(textview_output_messages_2, equalChars + "\n");
+                                        }
+
                                     }
                                     else {
-                                        SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH = tupleTmpResults.get(idx).toString();
-                                    }
-                                }
-                            }
-
-                            for (int idx = 0; idx < SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size(); idx++) {
-                                Log.d("transcribe", "SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(" + idx + ") = " + SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(idx));
-                            }
-
-                            Log.d("transcribe", "SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH = " + SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH);
-
-                            if (SUBTITLE.TMP_SAVED_FILE_PATH_LIST != null) {
-                                SUBTITLE.TMP_SAVED_SRC_FILE_PATH = SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(0);
-                                Log.d("transcribe", "SUBTITLE.TMP_SAVED_SRC_FILE_PATH = " + SUBTITLE.TMP_SAVED_SRC_FILE_PATH);
-
-                                if (SUBTITLE.TMP_SAVED_FILE_PATH_LIST.size() == 2 && SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(1) != null) {
-                                    SUBTITLE.TMP_SAVED_DST_FILE_PATH = SUBTITLE.TMP_SAVED_FILE_PATH_LIST.get(1);
-                                    Log.d("transcribe", "SUBTITLE.TMP_SAVED_DST_FILE_PATH = " + SUBTITLE.TMP_SAVED_DST_FILE_PATH);
-                                }
-
-                                Log.d("transcribe", "new File(tmpSrcSubtitleFilePath).exists() = " + new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).exists());
-                                Log.d("transcribe", "new File(tmpSrcSubtitleFilePath).length() = " + new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).length());
-
-                                if (new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).exists() && new File(SUBTITLE.TMP_SAVED_SRC_FILE_PATH).length() > 1) {
-                                    FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
-                                    if (FOLDER.SAVED_URI_LIST.size() == 0) {
 
                                         Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToDocumentsDir()");
                                         SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToDocumentsDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, subtitleFolderDisplayName);
@@ -361,7 +433,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                             Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
                                         }
 
-                                        if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
+                                        if (new File(SUBTITLE.SAVED_FILE[i].toString()).exists() && new File(SUBTITLE.SAVED_FILE[i].toString()).length() > 1) {
                                             Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
                                             appendText(textview_output_messages_2, equalChars + "\n");
                                             appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
@@ -376,134 +448,41 @@ public class TranscribeActivity extends AppCompatActivity {
                                                     appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
                                                 }
                                             }
+
                                             if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
                                                 appendText(textview_output_messages_2, equalChars + "\n");
                                                 appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
                                             }
                                             appendText(textview_output_messages_2, equalChars + "\n");
                                         }
-
-                                    }
-                                    else {
-                                        Log.d("transcribe", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
-                                        Uri dirUri = getFolderUri(FOLDER.PATH);
-                                        Log.d("transcribe", "dirUri = " + dirUri);
-
-                                        int j=0;
-                                        for (Uri savedTreeUri : FOLDER.SAVED_URI_LIST) {
-                                            Log.d("transcribe", "savedTreeUri[" + j + "] = " + savedTreeUri);
-                                            if (dirUri.getLastPathSegment().contains(savedTreeUri.getLastPathSegment())) {
-                                                FOLDER.URI = savedTreeUri;
-                                                Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
-                                            }
-                                            j+=1;
-                                        }
-
-                                        boolean alreadySaved = isTreeUriPermissionGrantedForDirPathOfFilePath(MEDIA_FILE.PATH_LIST.get(i));
-                                        if (alreadySaved) {
-
-                                            Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToSelectedDir()");
-                                            Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
-                                            SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToSelectedDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, FOLDER.URI);
-
-                                            if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
-                                                Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToSelectedDir()");
-                                                SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToSelectedDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, FOLDER.URI);
-                                                Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
-                                            }
-
-                                            if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
-                                                Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
-
-                                                if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
-                                                    String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
-                                                    Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
-                                                    if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
-                                                        appendText(textview_output_messages_2, equalChars + "\n");
-                                                        appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
-                                                    }
-                                                }
-
-                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
-                                                    appendText(textview_output_messages_2, equalChars + "\n");
-                                                    appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
-                                                }
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                            }
-
-                                        }
-                                        else {
-
-                                            Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToDocumentsDir()");
-                                            SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToDocumentsDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, subtitleFolderDisplayName);
-                                            Log.d("transcribe", "SUBTITLE.SAVED_FILE[" + i + "] = " + SUBTITLE.SAVED_FILE[i]);
-
-                                            if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
-                                                Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToDocumentsDir()");
-                                                SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToDocumentsDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, subtitleFolderDisplayName);
-                                                Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
-                                            }
-
-                                            if (new File(SUBTITLE.SAVED_FILE[i].toString()).exists() && new File(SUBTITLE.SAVED_FILE[i].toString()).length() > 1) {
-                                                Log.d("transcribe", SUBTITLE.SAVED_FILE[i] + " created");
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
-
-                                                if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
-                                                    String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
-                                                    Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
-                                                    if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
-                                                        appendText(textview_output_messages_2, equalChars + "\n");
-                                                        appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
-                                                    }
-                                                }
-
-                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
-                                                    appendText(textview_output_messages_2, equalChars + "\n");
-                                                    appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
-                                                }
-                                                appendText(textview_output_messages_2, equalChars + "\n");
-                                            }
-                                        }
                                     }
                                 }
                             }
                         }
-                        setText(textview_current_file, "");
-
-                        if (TRANSCRIBE_STATUS.IS_TRANSCRIBING && MEDIA_FILE.URI_LIST != null) {
-                            if (threadTranscriber != null) {
-                                threadTranscriber.interrupt();
-                                threadTranscriber = null;
-                            }
-                            TRANSCRIBE_STATUS.IS_TRANSCRIBING = false;
-                            String t = "Done";
-                            runOnUiThread(() -> button_cancel.setText(t));
-
-                            Log.d("transcribe", "transcribeStartTime = " + transcribeStartTime);
-                            Log.d("transcribe", "transcribeEndTime = " + System.currentTimeMillis());
-                            transcribeElapsedTime = System.currentTimeMillis() - transcribeStartTime;
-                            Log.d("transcribe", "transcribeElapsedTime = " + transcribeElapsedTime);
-                            long totalSeconds = transcribeElapsedTime / 1000;
-                            Log.d("transcribe", "totalSeconds = " + totalSeconds);
-                            long hours = totalSeconds / 3600;
-                            long minutes = (totalSeconds % 3600) / 60;
-                            long seconds = totalSeconds % 60;
-                            formattedElapsedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-                            appendText(textview_output_messages_2, "Transcribe total time : " + formattedElapsedTime + "\n");
-                            appendText(textview_output_messages_2, equalChars + "\n");
-                        }
-
                     }
-                    catch (Exception e) {
-                        Log.e("Exception: ", Objects.requireNonNull(e.getMessage()));
-                        e.printStackTrace();
+                    setText(textview_current_file, "");
+
+                    if (TRANSCRIBE_STATUS.IS_TRANSCRIBING && MEDIA_FILE.URI_LIST != null) {
+                        if (threadTranscriber != null) {
+                            threadTranscriber.interrupt();
+                            threadTranscriber = null;
+                        }
+                        TRANSCRIBE_STATUS.IS_TRANSCRIBING = false;
+                        String t = "Done";
+                        runOnUiThread(() -> button_cancel.setText(t));
+
+                        Log.d("transcribe", "transcribeStartTime = " + transcribeStartTime);
+                        Log.d("transcribe", "transcribeEndTime = " + System.currentTimeMillis());
+                        transcribeElapsedTime = System.currentTimeMillis() - transcribeStartTime;
+                        Log.d("transcribe", "transcribeElapsedTime = " + transcribeElapsedTime);
+                        long totalSeconds = transcribeElapsedTime / 1000;
+                        Log.d("transcribe", "totalSeconds = " + totalSeconds);
+                        long hours = totalSeconds / 3600;
+                        long minutes = (totalSeconds % 3600) / 60;
+                        long seconds = totalSeconds % 60;
+                        formattedElapsedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+                        appendText(textview_output_messages_2, "Total running time : " + formattedElapsedTime + "\n");
+                        appendText(textview_output_messages_2, equalChars + "\n");
                     }
 
                 }
@@ -596,46 +575,6 @@ public class TranscribeActivity extends AppCompatActivity {
             finish();
         }
     }
-
-
-    /*private int convertToWav(String filePath, File tmpWavFile, int channels, int rate) {
-        AtomicReference<Float> progress = new AtomicReference<>((float) 0);
-        Uri fileURI = Uri.fromFile(new File(filePath));
-        int videoLength = MediaPlayer.create(getApplicationContext(), fileURI).getDuration();
-
-        Config.resetStatistics();
-        Config.enableStatisticsCallback(newStatistics -> {
-            progress.set(Float.parseFloat(String.valueOf(newStatistics.getTime())) / videoLength);
-            int progressFinal = (int) (progress.get() * 100);
-            Log.d(Config.TAG, "Video Length: " + progressFinal);
-            Log.d(Config.TAG, String.format("frame: %d, time: %d", newStatistics.getVideoFrameNumber(), newStatistics.getTime()));
-            Log.d(Config.TAG, String.format("Quality: %f, time: %f", newStatistics.getVideoQuality(), newStatistics.getVideoFps()));
-            runOnUiThread(() -> pBar(100*progress.get(), 100, "Converting to temporary WAV file : "));
-        });
-
-        String command = " -y -i " + "\"" + filePath + "\"" + " -ac " + channels + " -ar " + rate + " " + "\"" + tmpWavFile + "\"";
-        int returnCode = FFmpeg.execute(command);
-        if (returnCode == RETURN_CODE_SUCCESS) {
-            Log.i(Config.TAG, "Command execution completed successfully.");
-        } else if (returnCode == RETURN_CODE_CANCEL) {
-            Log.i(Config.TAG, "Async command execution cancelled by user.");
-        } else {
-            Log.i(Config.TAG, String.format("Command execution failed with rc=%d.", returnCode));
-        }
-        return Integer.parseInt(String.valueOf(tmpWavFile.length()));
-    }*/
-
-
-    /*@SuppressLint("SetTextI18n")
-    public void pBar(float counter, float total, String prefix) {
-        int bar_length = 10;
-        int filled_up_Length = round(bar_length * counter/ total);
-        int percentage = round(100 * counter/ total);
-        String pounds = StringUtils.repeat('█', filled_up_Length);
-        String equals = StringUtils.repeat('-', (bar_length - filled_up_Length));
-        String bar = pounds + equals;
-        runOnUiThread(() -> textview_output_messages_2.setText(prefix + " |" + bar + "| " + percentage + '%'));
-    }*/
 
 
     @SuppressLint("Recycle")

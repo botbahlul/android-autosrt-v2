@@ -369,6 +369,7 @@ public class TranscribeActivity extends AppCompatActivity {
                                     }
 
                                 }
+
                                 else {
                                     Log.d("transcribe", "FOLDER.SAVED_URI_LIST.size() = " + FOLDER.SAVED_URI_LIST.size());
                                     Uri dirUri = getFolderUri(FOLDER.PATH);
@@ -391,36 +392,42 @@ public class TranscribeActivity extends AppCompatActivity {
                                         Log.d("transcribe", "FOLDER.URI = " + FOLDER.URI);
                                         SUBTITLE.SAVED_FILE[i] = saveSubtitleFileToSelectedDir(SUBTITLE.TMP_SAVED_SRC_FILE_PATH, SUBTITLE.TMP_SAVED_DST_FILE_PATH, FOLDER.URI);
 
-                                        if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
-                                            Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToSelectedDir()");
-                                            SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToSelectedDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, FOLDER.URI);
-                                            Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
+                                        if (SUBTITLE.SAVED_FILE[i] == null) {
+                                            Log.e("transcribe", "Failed to save subtitle file, saveSubtitleFileToSelectedDir() returned null");
+                                            appendText(textview_output_messages_2, "Gagal menyimpan file subtitle ke folder yang dipilih.\n");
                                         }
-
-                                        if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
-                                            Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
-                                            appendText(textview_output_messages_2, equalChars + "\n");
-                                            appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
-                                            appendText(textview_output_messages_2, equalChars + "\n");
-                                            appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
-
-                                            if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
-                                                String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
-                                                Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
-                                                if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
-                                                    appendText(textview_output_messages_2, equalChars + "\n");
-                                                    appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
-                                                }
+                                        else {
+                                            if (SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH != null && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).exists() && new File(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH).length() > 1) {
+                                                Log.d("transcribe", "Saving subtitle embedded file using saveSubtitleEmbeddedFileToSelectedDir()");
+                                                SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] = saveSubtitleEmbeddedFileToSelectedDir(SUBTITLE_EMBEDDED.TMP_SAVED_FILE_PATH, FOLDER.URI);
+                                                Log.d("transcribe", "SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[" + i + "] = " + SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i]);
                                             }
 
-                                            if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                            if (SUBTITLE.SAVED_FILE[i].exists() && SUBTITLE.SAVED_FILE[i].length() > 1) {
+                                                Log.d("transcribe", SUBTITLE.SAVED_FILE[i].toString() + " created");
                                                 appendText(textview_output_messages_2, equalChars + "\n");
-                                                appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
-                                            }
-                                            appendText(textview_output_messages_2, equalChars + "\n");
-                                        }
+                                                appendText(textview_output_messages_2, "Overall results for '" + MEDIA_FILE.DISPLAY_NAME_LIST.get(i) + "' : \n");
+                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                                appendText(textview_output_messages_2, SUBTITLE.SAVED_FILE[i] + "\n");
 
+                                                if (!Objects.equals(LANGUAGE.SRC_CODE, LANGUAGE.DST_CODE)) {
+                                                    String savedDstSubtitleFilePath = StringUtils.replace(SUBTITLE.SAVED_FILE[i].toString(), LANGUAGE.SRC_CODE + ".srt", LANGUAGE.DST_CODE + ".srt");
+                                                    Log.d("transcribe", "savedDstSubtitleFilePath = " + savedDstSubtitleFilePath);
+                                                    if (new File(savedDstSubtitleFilePath).exists() && new File(savedDstSubtitleFilePath).length() > 1) {
+                                                        appendText(textview_output_messages_2, equalChars + "\n");
+                                                        appendText(textview_output_messages_2, savedDstSubtitleFilePath + "\n");
+                                                    }
+                                                }
+
+                                                if (SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST != null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] !=null && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].exists() && SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i].length() > 1) {
+                                                    appendText(textview_output_messages_2, equalChars + "\n");
+                                                    appendText(textview_output_messages_2, SUBTITLE_EMBEDDED.SAVED_FILE_PATH_LIST[i] + "\n");
+                                                }
+                                                appendText(textview_output_messages_2, equalChars + "\n");
+                                            }
+                                        }
                                     }
+
                                     else {
 
                                         Log.d("transcribe", "Saving subtitle file using saveSubtitleFileToDocumentsDir()");
@@ -1265,58 +1272,76 @@ public class TranscribeActivity extends AppCompatActivity {
         getContentResolver().releasePersistableUriPermission(uri,takeFlags);
     }
 
-
     private String Uri2Path(Context context, Uri uri) {
         if (uri == null) {
             return null;
         }
 
-        if(ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
+        if (ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
             Log.d("Uri2Path", "uri.getPath() = " + uri.getPath());
             return uri.getPath();
         }
-
-        else if(ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+        else if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
             String authority = uri.getAuthority();
             Log.d("Uri2Path", "authority = " + authority);
-            String idStr = "";
 
-            if(authority.startsWith("com.android.externalstorage")) {
+            if (authority.startsWith("com.android.externalstorage")) {
                 String docId = DocumentsContract.getDocumentId(uri);
                 String[] split = docId.split(":");
                 String fullPath = getPathFromExtSD(split);
-                if (!fullPath.equals("")) {
-                    Log.d("Uri2Path", "fullPath = " + fullPath);
-                    return fullPath;
-                } else {
+                return (fullPath != null && !fullPath.isEmpty()) ? fullPath : null;
+            }
+            else if (authority.startsWith("com.android.providers")) {
+                String docId = DocumentsContract.getDocumentId(uri);
+                Log.d("Uri2Path", "providers docId = " + docId);
+
+                // Tangani docId berformat "raw:/absolute/path" (sering muncul dari DownloadsProvider)
+                if (docId.startsWith("raw:")) {
+                    String rawPath = docId.substring(4);
+                    Log.d("Uri2Path", "providers rawPath = " + rawPath);
+                    return rawPath.isEmpty() ? null : rawPath;
+                }
+
+                // Format lama: "type:numericId" -> query MediaStore pakai _id
+                String[] docIdSplit = docId.split(":");
+                if (docIdSplit.length < 2) {
+                    Log.e("Uri2Path", "Unexpected docId format: " + docId);
                     return null;
                 }
-            }
+                String idStr = docIdSplit[1];
+                Log.d("Uri2Path", "providers idStr = " + idStr);
 
-            else {
-                if(authority.equals("media")) {
-                    idStr = uri.toString().substring(uri.toString().lastIndexOf('/') + 1);
-                    Log.d("Uri2Path", "media idStr = " + idStr);
-                }
-                else if(authority.startsWith("com.android.providers")) {
-                    idStr = DocumentsContract.getDocumentId(uri).split(":")[1];
-                    Log.d("Uri2Path", "providers idStr = " + idStr);
-                }
-
-                ContentResolver contentResolver = context.getContentResolver();
-                Cursor cursor = contentResolver.query(MediaStore.Files.getContentUri("external"),
-                        new String[] {MediaStore.Files.FileColumns.DATA},
+                Cursor cursor = context.getContentResolver().query(
+                        MediaStore.Files.getContentUri("external"),
+                        new String[]{MediaStore.Files.FileColumns.DATA},
                         "_id=?",
                         new String[]{idStr}, null);
-                if (cursor != null && cursor.getCount()>0 && cursor.moveToFirst()) {
-                    cursor.moveToFirst();
+                if (cursor != null) {
                     try {
-                        int idx = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA);
-                        Log.d("Uri2Path", "cursor.getString(idx) = " + cursor.getString(idx));
-                        return cursor.getString(idx);
+                        if (cursor.moveToFirst()) {
+                            int idx = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA);
+                            if (idx >= 0) return cursor.getString(idx);
+                        }
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
+                    finally {
+                        cursor.close();
+                    }
+                }
+            }
+            else if (authority.equals("media")) {
+                String idStr = uri.toString().substring(uri.toString().lastIndexOf('/') + 1);
+                Log.d("Uri2Path", "media idStr = " + idStr);
+                Cursor cursor = context.getContentResolver().query(
+                        MediaStore.Files.getContentUri("external"),
+                        new String[]{MediaStore.Files.FileColumns.DATA},
+                        "_id=?",
+                        new String[]{idStr}, null);
+                if (cursor != null) {
+                    try {
+                        if (cursor.moveToFirst()) {
+                            int idx = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA);
+                            if (idx >= 0) return cursor.getString(idx);
+                        }
                     }
                     finally {
                         cursor.close();

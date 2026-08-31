@@ -840,7 +840,9 @@ public class MainActivity extends AppCompatActivity {
             MEDIA_FILE.DISPLAY_NAME_LIST = new ArrayList<>();
             SUBTITLE.TMP_SAVED_SRC_FILE_PATH = null;
             SUBTITLE.TMP_SAVED_DST_FILE_PATH = null;
+            Uri initialUri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3A");
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
             String[] mimeTypes = {"video/*", "audio/*"};
@@ -1444,13 +1446,87 @@ public class MainActivity extends AppCompatActivity {
                         // USER SELECTS ONLY 1 SINGLE MEDIA_FILE
                         if (intent !=null && intent.getClipData() == null) {
                             Log.d("startForBrowseFileActivity", "intent !=null && intent.getClipData() == null");
+
                             Uri fileUri = intent.getData();
+
+                            if (fileUri == null) {
+                                Log.e("FILE_PICKER_DEBUG", "fileUri == null");
+                                setText(
+                                        textview_output_messages_1,
+                                        "Selected file URI is null."
+                                );
+                                return;
+                            }
+
+                            Log.d("FILE_PICKER_DEBUG", "================================");
+                            Log.d("FILE_PICKER_DEBUG", "fileUri       = " + fileUri);
+                            Log.d("FILE_PICKER_DEBUG", "scheme        = " + fileUri.getScheme());
+                            Log.d("FILE_PICKER_DEBUG", "authority     = " + fileUri.getAuthority());
+                            Log.d("FILE_PICKER_DEBUG", "path          = " + fileUri.getPath());
+                            Log.d("FILE_PICKER_DEBUG", "lastSegment   = " + fileUri.getLastPathSegment());
+
+                            try {
+                                Log.d(
+                                        "FILE_PICKER_DEBUG",
+                                        "isDocumentUri = " +
+                                                DocumentsContract.isDocumentUri(
+                                                        MainActivity.this,
+                                                        fileUri
+                                                )
+                                );
+                            }
+                            catch (Exception e) {
+                                Log.e(
+                                        "FILE_PICKER_DEBUG",
+                                        "isDocumentUri() failed",
+                                        e
+                                );
+                            }
+
                             MEDIA_FILE.URI_LIST.add(fileUri);
-                            String selectedFilePath = Uri2Path(getApplicationContext(), fileUri);
-                            MEDIA_FILE.PATH_LIST.add(selectedFilePath);
                             String fileDisplayName = queryName(getApplicationContext(), fileUri);
+                            //String selectedFilePath = Uri2Path(getApplicationContext(), fileUri);
+                            String selectedFilePath = Uri2Path(getApplicationContext(), fileUri);
+                            Log.d(
+                                    "FILE_PICKER_DEBUG",
+                                    "selectedFilePath = " + selectedFilePath
+                            );
+
+                            if (selectedFilePath == null || selectedFilePath.isEmpty()) {
+
+                                Log.e("FILE_PICKER_DEBUG",
+                                        "Uri2Path() FAILED!");
+
+                                setText(
+                                        textview_output_messages_1,
+                                        "Cannot resolve selected file path.\n\n" +
+                                                "URI:\n" + fileUri
+                                );
+
+                                return;
+                            }
+
+                            MEDIA_FILE.PATH_LIST.add(selectedFilePath);
                             MEDIA_FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
                             FOLDER.PATH = new File(selectedFilePath).getParent();
+                            MEDIA_FILE.DISPLAY_NAME_LIST.add(fileDisplayName);
+                            File selectedFile = new File(selectedFilePath);
+                            File parentFile = selectedFile.getParentFile();
+                            if (parentFile != null) {
+                                FOLDER.PATH = parentFile.getAbsolutePath();
+                            }
+                            else {
+                                FOLDER.PATH = null;
+                                Log.e("FILE_PICKER_DEBUG",
+                                        "Cannot determine parent folder for: "
+                                                + selectedFilePath);
+                                setText(
+                                        textview_output_messages_1,
+                                        "Cannot determine parent folder:\n"
+                                                + selectedFilePath
+                                );
+                                return;
+                            }
 
                             boolean alreadySaved = isTreeUriPermissionGrantedForDirPathOfFilePath(selectedFilePath);
                             if (!alreadySaved) {
@@ -1562,88 +1638,288 @@ public class MainActivity extends AppCompatActivity {
         return uri;
     }
 
-
     private String TreeUri2Path(Uri uri) {
         if (uri == null) {
             return null;
         }
         String docId = DocumentsContract.getTreeDocumentId(uri);
         Log.d("TreeUri2Path", "docId = " + docId);
+
+        // Handle "raw:/absolute/path" docId (seen on some vendors/SD cards)
+        if (docId.startsWith("raw:")) {
+            String rawPath = docId.substring(4);
+            Log.d("TreeUri2Path", "rawPath = " + rawPath);
+            return (rawPath.isEmpty()) ? null : rawPath;
+        }
+
         String[] split = docId.split(":");
         Log.d("TreeUri2Path", "split = " + Arrays.toString(split));
+
+        if (split.length < 2) {
+            Log.e("TreeUri2Path", "Unexpected docId format: " + docId);
+            return null;
+        }
+
         String fullPath = getPathFromExtSD(split);
-        if (!fullPath.equals("")) {
-            Log.d("TreeUri2Path", "fullPath = " + fullPath);
+        Log.d("TreeUri2Path", "fullPath = " + fullPath);
+
+        // fullPath can be null, not just "", so check null first
+        if (fullPath != null && !fullPath.isEmpty()) {
             return fullPath;
-        }
-        else {
-            return null;
-        }
-    }
-
-
-    private String Uri2Path(Context context, Uri uri) {
-        if (uri == null) {
-            return null;
-        }
-
-        if(ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
-            Log.d("Uri2Path", "uri.getPath() = " + uri.getPath());
-            return uri.getPath();
-        }
-
-        else if(ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
-            String authority = uri.getAuthority();
-            Log.d("Uri2Path", "authority = " + authority);
-            String idStr = "";
-
-            if(authority.startsWith("com.android.externalstorage")) {
-                String docId = DocumentsContract.getDocumentId(uri);
-                String[] split = docId.split(":");
-                String fullPath = getPathFromExtSD(split);
-                if (!fullPath.equals("")) {
-                    Log.d("Uri2Path", "fullPath = " + fullPath);
-                    return fullPath;
-                }
-                else {
-                    return null;
-                }
-            }
-
-            else {
-                if(authority.equals("media")) {
-                    idStr = uri.toString().substring(uri.toString().lastIndexOf('/') + 1);
-                    Log.d("Uri2Path", "media idStr = " + idStr);
-                }
-                else if(authority.startsWith("com.android.providers")) {
-                    idStr = DocumentsContract.getDocumentId(uri).split(":")[1];
-                    Log.d("Uri2Path", "providers idStr = " + idStr);
-                }
-
-                ContentResolver contentResolver = context.getContentResolver();
-                Cursor cursor = contentResolver.query(MediaStore.Files.getContentUri("external"),
-                        new String[] {MediaStore.Files.FileColumns.DATA},
-                        "_id=?",
-                        new String[]{idStr}, null);
-                if (cursor != null && cursor.getCount()>0 && cursor.moveToFirst()) {
-                    cursor.moveToFirst();
-                    try {
-                        int idx = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA);
-                        Log.d("Uri2Path", "cursor.getString(idx) = " + cursor.getString(idx));
-                        return cursor.getString(idx);
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    finally {
-                        cursor.close();
-                    }
-                }
-            }
         }
         return null;
     }
 
+    private String Uri2Path(Context context, Uri uri) {
+
+        Log.d("Uri2Path", "========================================");
+
+        if (uri == null) {
+            Log.e("Uri2Path", "URI IS NULL");
+            return null;
+        }
+
+        Log.d("Uri2Path", "uri = " + uri);
+        Log.d("Uri2Path", "scheme = " + uri.getScheme());
+        Log.d("Uri2Path", "authority = " + uri.getAuthority());
+        Log.d("Uri2Path", "path = " + uri.getPath());
+
+        // ============================================================
+        // FILE URI
+        // ============================================================
+
+        if (ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
+
+            String path = uri.getPath();
+
+            Log.d("Uri2Path", "FILE URI path = " + path);
+
+            return path;
+        }
+
+
+        // ============================================================
+        // CONTENT URI
+        // ============================================================
+
+        if (!ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+
+            Log.e("Uri2Path", "Unsupported URI scheme: " + uri.getScheme());
+
+            return null;
+        }
+
+
+        String authority = uri.getAuthority();
+
+        Log.d("Uri2Path", "CONTENT authority = " + authority);
+
+
+        // ============================================================
+        // DOCUMENT PROVIDER
+        // ============================================================
+
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+
+            String docId;
+
+            try {
+                docId = DocumentsContract.getDocumentId(uri);
+            }
+            catch (Exception e) {
+                Log.e("Uri2Path", "getDocumentId() failed", e);
+                return null;
+            }
+
+            Log.d("Uri2Path", "DocumentProvider docId = " + docId);
+
+
+            // ========================================================
+            // RAW DOCUMENT
+            //
+            // Example:
+            //
+            // raw:/storage/emulated/0/Download/AUTOSRT/file.mp4
+            //
+            // ========================================================
+
+            if (docId != null && docId.startsWith("raw:")) {
+
+                String rawPath = docId.substring(4);
+
+                Log.d("Uri2Path", "RAW path = " + rawPath);
+
+                if (rawPath != null && !rawPath.isEmpty()) {
+                    return rawPath;
+                }
+
+                return null;
+            }
+
+
+            // ========================================================
+            // EXTERNAL STORAGE PROVIDER
+            //
+            // Example:
+            //
+            // primary:Download/AUTOSRT/file.mp4
+            //
+            // ========================================================
+
+            if ("com.android.externalstorage.documents".equals(authority)) {
+
+                String[] split = docId.split(":", 2);
+
+                Log.d("Uri2Path",
+                        "ExternalStorage split = " + Arrays.toString(split));
+
+                if (split.length == 2) {
+
+                    String fullPath = getPathFromExtSD(split);
+
+                    Log.d("Uri2Path",
+                            "ExternalStorage fullPath = " + fullPath);
+
+                    if (fullPath != null && !fullPath.isEmpty()) {
+                        return fullPath;
+                    }
+                }
+
+                Log.e("Uri2Path",
+                        "Unable to resolve ExternalStorage document");
+
+                return null;
+            }
+
+
+            // ========================================================
+            // DOWNLOADS PROVIDER
+            // ========================================================
+
+            if ("com.android.providers.downloads.documents".equals(authority)) {
+
+                Log.d("Uri2Path",
+                        "DownloadsProvider detected");
+
+                // raw: sudah ditangani di atas.
+                //
+                // Untuk document ID selain raw:, coba resolver/query
+                // melalui ContentResolver.
+
+                try {
+
+                    Cursor cursor = context.getContentResolver().query(
+                            uri,
+                            new String[]{
+                                    MediaStore.Files.FileColumns.DATA
+                            },
+                            null,
+                            null,
+                            null
+                    );
+
+                    if (cursor != null) {
+
+                        try {
+
+                            if (cursor.moveToFirst()) {
+
+                                int index = cursor.getColumnIndex(
+                                        MediaStore.Files.FileColumns.DATA
+                                );
+
+                                if (index >= 0) {
+
+                                    String path = cursor.getString(index);
+
+                                    Log.d("Uri2Path",
+                                            "Downloads DATA = " + path);
+
+                                    if (path != null && !path.isEmpty()) {
+                                        return path;
+                                    }
+                                }
+                            }
+
+                        }
+                        finally {
+                            cursor.close();
+                        }
+                    }
+
+                }
+                catch (Exception e) {
+
+                    Log.e("Uri2Path",
+                            "DownloadsProvider query failed",
+                            e);
+                }
+            }
+        }
+
+
+        // ============================================================
+        // MEDIA PROVIDER / OTHER CONTENT PROVIDER
+        // ============================================================
+
+        Cursor cursor = null;
+
+        try {
+
+            cursor = context.getContentResolver().query(
+                    uri,
+                    new String[]{
+                            MediaStore.Files.FileColumns.DATA
+                    },
+                    null,
+                    null,
+                    null
+            );
+
+            if (cursor != null && cursor.moveToFirst()) {
+
+                int index = cursor.getColumnIndex(
+                        MediaStore.Files.FileColumns.DATA
+                );
+
+                if (index >= 0) {
+
+                    String path = cursor.getString(index);
+
+                    Log.d("Uri2Path",
+                            "Generic DATA = " + path);
+
+                    if (path != null && !path.isEmpty()) {
+                        return path;
+                    }
+                }
+            }
+
+        }
+        catch (Exception e) {
+
+            Log.e("Uri2Path",
+                    "Generic content resolver failed",
+                    e);
+
+        }
+        finally {
+
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+
+        // ============================================================
+        // LAST RESORT
+        // ============================================================
+
+        Log.e("Uri2Path",
+                "FAILED TO RESOLVE URI TO FILESYSTEM PATH: " + uri);
+
+        return null;
+    }
 
     private String getPathFromExtSD(String[] pathData) {
         final String type = pathData[0];
@@ -1909,32 +2185,126 @@ public class MainActivity extends AppCompatActivity {
         return savedTreesUri;
     }
 
-
     private boolean isTreeUriPermissionGrantedForDirPathOfFilePath(String filePath) {
-        String dirName = Objects.requireNonNull(new File(filePath).getParentFile()).getName();
+
+        if (filePath == null || filePath.isEmpty()) {
+            Log.e(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "filePath == null or empty"
+            );
+            return false;
+        }
+
+        File file = new File(filePath);
+        File parent = file.getParentFile();
+
+        if (parent == null) {
+            Log.e(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "parent == null for: " + filePath
+            );
+            return false;
+        }
+
+        String dirName = parent.getName();
+
         Uri dirUri = getFolderUri(dirName);
 
-        FOLDER.SAVED_URI_LIST = loadSavedTreeUrisFromSharedPreference();
-        if (FOLDER.SAVED_URI_LIST.size() > 0) {
-            for (int j=0; j<FOLDER.SAVED_URI_LIST.size(); j++) {
-                Uri savedTreeUri = Uri.parse(FOLDER.SAVED_URI_LIST.get(j).toString());
+        if (dirUri == null) {
+            Log.e(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "dirUri == null for directory: " + dirName
+            );
+            return false;
+        }
 
-                Log.d("isTreeUriPermissionGrantedForFilePath", "savedTreeUri = " + savedTreeUri);
-                Log.d("isTreeUriPermissionGrantedForFilePath", "savedTreeUri.getLastPathSegment() = " + savedTreeUri.getLastPathSegment());
-                Log.d("isTreeUriPermissionGrantedForFilePath", "dirUri = " + dirUri);
-                Log.d("isTreeUriPermissionGrantedForFilePath", "dirUri.getLastPathSegment() = " + dirUri.getLastPathSegment());
+        FOLDER.SAVED_URI_LIST =
+                loadSavedTreeUrisFromSharedPreference();
 
-                if (savedTreeUri.getLastPathSegment().contains(dirUri.getLastPathSegment())) {
-                    FOLDER.URI = savedTreeUri;
-                    Log.d("isTreeUriPermissionGrantedForDirPathOfFilePath", "FOLDER.URI = " + FOLDER.URI);
-                    Log.d("isTreeUriPermissionGrantedForDirPathOfFilePath", "alreadySaved = true");
-                    return true;
-                }
-                else {
-                    Log.d("isTreeUriPermissionGrantedForDirPathOfFilePath", "alreadySaved = false");
-                }
+        if (FOLDER.SAVED_URI_LIST == null
+                || FOLDER.SAVED_URI_LIST.size() == 0) {
+            return false;
+        }
+
+        String dirLastPathSegment =
+                dirUri.getLastPathSegment();
+
+        if (dirLastPathSegment == null) {
+            Log.e(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "dirUri.getLastPathSegment() == null"
+            );
+            return false;
+        }
+
+        for (int j = 0;
+             j < FOLDER.SAVED_URI_LIST.size();
+             j++) {
+
+            if (FOLDER.SAVED_URI_LIST.get(j) == null) {
+                continue;
+            }
+
+            Uri savedTreeUri =
+                    Uri.parse(
+                            FOLDER.SAVED_URI_LIST.get(j).toString()
+                    );
+
+            if (savedTreeUri == null) {
+                continue;
+            }
+
+            String savedLastPathSegment =
+                    savedTreeUri.getLastPathSegment();
+
+            Log.d(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "savedTreeUri = " + savedTreeUri
+            );
+
+            Log.d(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "savedLastPathSegment = "
+                            + savedLastPathSegment
+            );
+
+            Log.d(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "dirUri = " + dirUri
+            );
+
+            Log.d(
+                    "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                    "dirLastPathSegment = "
+                            + dirLastPathSegment
+            );
+
+            if (savedLastPathSegment != null
+                    && savedLastPathSegment.contains(
+                    dirLastPathSegment
+            )) {
+
+                FOLDER.URI = savedTreeUri;
+
+                Log.d(
+                        "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                        "FOLDER.URI = " + FOLDER.URI
+                );
+
+                Log.d(
+                        "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                        "alreadySaved = true"
+                );
+
+                return true;
             }
         }
+
+        Log.d(
+                "isTreeUriPermissionGrantedForDirPathOfFilePath",
+                "alreadySaved = false"
+        );
+
         return false;
     }
 

@@ -2426,23 +2426,19 @@ def transcribe(src, dst, media_filepath, media_file_display_name,
     Config.resetStatistics()
     Config.enableRedirection()
 
-    # ============================================================
-    # TEST GOOGLE TRANSLATE ENDPOINT ONCE
-    # ============================================================
-
-    endpoint_config = test_translation_endpoint(src, dst)
-
-    if endpoint_config is None:
-        print("ERROR: No working Google Translate endpoint.")
-
-        if pool:
-            pool.close()
-            pool.join()
-            pool = None
-
-        return 1
-
-    print(f"endpoint_config = {endpoint_config}")
+    if src and dst:
+        # ============================================================
+        # TEST GOOGLE TRANSLATE ENDPOINT ONCE
+        # ============================================================
+        endpoint_config = test_translation_endpoint(src, dst)
+        if endpoint_config is None:
+            print("ERROR: No working Google Translate endpoint.")
+            if pool:
+                pool.close()
+                pool.join()
+                pool = None
+            return 1
+        print(f"endpoint_config = {endpoint_config}")
 
     activity.runOnUiThread(
         appendText(
